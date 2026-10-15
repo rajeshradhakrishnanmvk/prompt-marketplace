@@ -1,0 +1,5 @@
+---
+layout: null
+permalink: /prompts.json
+---
+{% include prompt-index.liquid %}

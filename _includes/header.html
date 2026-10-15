@@ -1,0 +1,28 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="{{ '/' | relative_url }}" aria-label="Prompt Marketplace, home">
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="8" fill="currentColor"/>
+        <path d="M8 11h16M8 16h10M8 21h13" fill="none" stroke="var(--logo-mark)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-word">Prompt <span class="logo-rest">Marketplace</span></span>
+    </a>
+    <form class="search" role="search" action="{{ '/' | relative_url }}" method="get">
+      <label class="visually-hidden" for="site-search">Search prompts</label>
+      <div class="search-field">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <input id="site-search" name="q" type="search" placeholder="Search prompts" autocomplete="off" enterkeyhint="search">
+        <button type="button" class="search-clear" id="search-clear" hidden>Clear</button>
+      </div>
+    </form>
+    <a class="btn btn-primary" href="{{ '/add/' | relative_url }}"{% if page.url == '/add/' or page.url == '/add' %} aria-current="page"{% endif %}>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      Add prompt
+    </a>
+  </div>
+</header>
