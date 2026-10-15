@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
+  {% assign summary = page.description | default: site.description %}
+  <meta name="description" content="{{ summary | escape }}">
+  <link rel="canonical" href="{{ page.url | absolute_url }}">
+  <meta property="og:title" content="{% if page.url == "/" %}{{ site.title | escape }}{% else %}{{ page.title | escape }}{% endif %}">
+  <meta property="og:description" content="{{ summary | escape }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ page.url | absolute_url }}">
+  <meta name="theme-color" content="#efece6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121413" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f6e56'/%3E%3Cpath d='M8 11h16M8 16h10M8 21h13' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
+  <script>
+    window.PM = {
+      baseurl: {{ site.baseurl | jsonify }},
+      promptsUrl: {{ "/prompts.json" | relative_url | jsonify }},
+      home: {{ "/" | relative_url | jsonify }},
+      repo: {{ site.prompt_repo | jsonify }},
+      branch: {{ site.prompt_branch | jsonify }},
+      siteTitle: {{ site.title | jsonify }}
+    };
+  </script>
+  <script>
+    (function () {
+      var narrow = window.matchMedia("(max-width: 959px)").matches;
+      document.documentElement.setAttribute("data-layout", narrow ? "narrow" : "wide");
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  {% include header.html %}
+  {{ content }}
+  <div id="live-status" class="visually-hidden" aria-live="polite"></div>
+  <script src="{{ '/assets/js/util.js' | relative_url }}"></script>
+  {% if page.url == "/" %}
+  <script src="{{ '/assets/js/feed.js' | relative_url }}"></script>
+  {% elsif page.url == "/add/" or page.url == "/add" %}
+  <script src="{{ '/assets/js/compose.js' | relative_url }}"></script>
+  {% elsif page.collection == "prompts" %}
+  <script src="{{ '/assets/js/prompt.js' | relative_url }}"></script>
+  {% endif %}
+</body>
+</html>
