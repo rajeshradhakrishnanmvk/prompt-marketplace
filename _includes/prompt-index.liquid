@@ -1,4 +1,0 @@
-[{%- for prompt in site.prompts reversed -%}
-{"slug":{{ prompt.slug | jsonify }},"path":{{ prompt.relative_path | jsonify }},"title":{{ prompt.title | jsonify }},"category":{{ prompt.category | jsonify }},"tags":{{ prompt.tags | jsonify }},"author":{{ prompt.author | jsonify }},"date":{{ prompt.date | date: "%Y-%m-%d" | jsonify }},"description":{% if prompt.description %}{{ prompt.description | jsonify }}{% else %}""{% endif %},"html":{{ prompt.content | jsonify }},"url":{{ prompt.url | relative_url | jsonify }}}
-{%- unless forloop.last -%},{%- endunless -%}
-{%- endfor -%}]

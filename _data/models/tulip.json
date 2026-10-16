@@ -1,0 +1,261 @@
+{
+  "id": "tulip",
+  "name": "Tulip",
+  "difficulty": 1,
+  "note": "This tulip is the flat flower head, with no stem.",
+  "camera": {
+    "rx": -48,
+    "ry": -14,
+    "rz": 225,
+    "perspective": 1100
+  },
+  "flaps": [
+    {
+      "id": "front",
+      "parent": null,
+      "poly": [],
+      "hinge": {
+        "p": [
+          1,
+          0
+        ],
+        "axis": [
+          -1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "center-l",
+      "parent": "front",
+      "poly": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0.625
+        ],
+        [
+          0.792,
+          0.208
+        ],
+        [
+          0.5,
+          0.5
+        ]
+      ],
+      "hinge": null
+    },
+    {
+      "id": "petal-l",
+      "parent": "center-l",
+      "poly": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0.625
+        ],
+        [
+          0.792,
+          0.208
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.625
+        ],
+        "axis": [
+          -0.208,
+          -0.417
+        ]
+      }
+    },
+    {
+      "id": "center-r",
+      "parent": "front",
+      "poly": [
+        [
+          1,
+          1
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.208,
+          0.792
+        ],
+        [
+          0.625,
+          1
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0,
+          0
+        ],
+        "axis": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "petal-r",
+      "parent": "center-r",
+      "poly": [
+        [
+          0,
+          1
+        ],
+        [
+          0.625,
+          1
+        ],
+        [
+          0.208,
+          0.792
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.625,
+          1
+        ],
+        "axis": [
+          -0.417,
+          -0.208
+        ]
+      }
+    },
+    {
+      "id": "back",
+      "parent": null,
+      "poly": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "hinge": null
+    }
+  ],
+  "creases": [
+    [
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      "valley"
+    ],
+    [
+      [
+        0,
+        0
+      ],
+      [
+        0.5,
+        0.5
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.375,
+        0
+      ],
+      [
+        0.792,
+        0.208
+      ],
+      "valley"
+    ],
+    [
+      [
+        0,
+        0.375
+      ],
+      [
+        0.208,
+        0.792
+      ],
+      "valley"
+    ]
+  ],
+  "steps": [
+    {
+      "label": "Turn the square so it looks like a diamond. Fold the top corner down to the bottom corner to make a triangle.",
+      "dur": 1.7,
+      "moves": [
+        {
+          "flap": "front",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the triangle in half side to side, then unfold it.",
+      "dur": 1.5,
+      "moves": [
+        {
+          "flap": "center-r",
+          "angle": 180,
+          "from": 0,
+          "to": 0.42
+        },
+        {
+          "flap": "center-r",
+          "angle": 0,
+          "from": 0.58,
+          "to": 1
+        }
+      ]
+    },
+    {
+      "label": "Fold the right corner up at an angle so its tip sticks up above the top edge.",
+      "dur": 1.85,
+      "moves": [
+        {
+          "flap": "petal-r",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Do the same with the left corner.",
+      "dur": 1.85,
+      "moves": [
+        {
+          "flap": "petal-l",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Turn it over.",
+      "dur": 2.1,
+      "flip": 180,
+      "moves": []
+    }
+  ]
+}

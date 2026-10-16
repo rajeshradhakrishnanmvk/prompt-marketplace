@@ -1,31 +1,32 @@
-title: Prompt Marketplace
-description: A public feed of reusable prompts you can copy, like, and contribute.
+title: Foldly
+description: Paint a square. Watch it fold.
 url: https://rajeshradhakrishnanmvk.github.io
 baseurl: /prompt-marketplace
 timezone: UTC
 markdown: kramdown
 permalink: pretty
-excerpt_separator: "<!--more-->"
-prompt_repo: rajeshradhakrishnanmvk/prompt-marketplace
-prompt_branch: main
 
 collections:
-  prompts:
+  models:
     output: true
-    permalink: /prompts/:slug/
+    permalink: /models/:name/
 
 defaults:
   - scope:
       path: ""
-      type: prompts
     values:
-      layout: prompt
+      layout: default
+  - scope:
+      path: ""
+      type: models
+    values:
+      layout: model
 
 exclude:
   - README.md
-  - CONTRIBUTING.md
+  - tools
+  - vendor
   - Gemfile
   - Gemfile.lock
-  - vendor
-  - .bundle
   - node_modules
+  - .bundle

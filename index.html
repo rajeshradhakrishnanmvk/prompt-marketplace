@@ -1,72 +1,36 @@
 ---
 layout: default
+title: Foldly
+description: Decorate a flat square of paper on screen, then watch Foldly fold it into a 3D origami model one step at a time.
+needs_models: true
 ---
-<div class="shell">
-  <aside class="side side-left" aria-label="Categories">
-    <section class="card side-card">
-      <div class="side-head">
-        <h2 class="side-heading" id="categories-label">Categories</h2>
-        <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="category-nav">Categories</button>
-      </div>
-      <nav id="category-nav" class="side-panel" aria-label="Filter by category"></nav>
-    </section>
-  </aside>
-  <main id="main" class="feed-col">
-    <a class="card composer" href="{{ '/add/' | relative_url }}">
-      <span class="avatar" aria-hidden="true">+</span>
-      <span class="composer-fake">Share a prompt with the feed</span>
-    </a>
-    <div class="feed-toolbar">
-      <div>
-        <h1 id="feed-heading">Latest prompts</h1>
-        <p id="feed-status" tabindex="-1" aria-live="polite">Loading prompts…</p>
-        <p class="hint">Likes stay in this browser. Press / to focus search.</p>
-      </div>
-      <div class="sort-wrap">
-        <label for="sort">Sort</label>
-        <select id="sort">
-          <option value="newest">Newest</option>
-          <option value="liked">Most liked</option>
-        </select>
-      </div>
+<section class="hero">
+  <div>
+    <h1>Paint a square. Watch it fold.</h1>
+    <p class="lede">Decorate a flat square of paper on screen, then watch Foldly fold it into a 3D origami model one step at a time. Share it as a link, a picture, or a video.</p>
+    <div class="hero-actions">
+      <a class="btn primary xl" href="{{ site.baseurl }}/fold/#m=paper-cup">Start painting</a>
     </div>
-    <div id="active-filters" class="filter-row"></div>
-    <div id="feed-list" aria-busy="true" aria-label="Prompt feed"></div>
-    <noscript>
-      <div class="card" style="padding: 14px 16px;">
-        <p>JavaScript is off, so filters and likes are unavailable. Every prompt is linked below.</p>
-        <ul>
-          {% for prompt in site.prompts reversed %}
-          <li><a href="{{ prompt.url | relative_url }}">{{ prompt.title | escape }}</a> — {{ prompt.category | escape }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </noscript>
-  </main>
-  <aside class="side side-right" aria-label="Trending and about">
-    <section class="card side-card">
-      <div class="side-head">
-        <h2 class="side-heading">Trending tags</h2>
-        <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="trending-tags">Trending tags</button>
-      </div>
-      <div id="trending-tags" class="side-panel tag-cloud"></div>
-    </section>
-    <section class="card side-card">
-      <div class="side-head">
-        <h2 class="side-heading">About</h2>
-        <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="about-panel">About</button>
-      </div>
-      <div id="about-panel" class="side-panel">
-        <p class="about-copy">Prompt Marketplace is a public feed of prompts you can copy into your own tools. Likes are stored only in this browser.</p>
-        <p class="about-copy">A new prompt goes live after its pull request is merged and GitHub Pages rebuilds.</p>
-        <p class="about-copy"><a href="{{ '/add/' | relative_url }}">Add a prompt</a></p>
-      </div>
-    </section>
-  </aside>
+  </div>
+  <div class="hero-stage" aria-hidden="true">
+    <div id="hero-fold" class="fold-host"></div>
+  </div>
+</section>
+
+<h2 class="section-title" id="models">Models</h2>
+<div class="model-grid">
+  {% assign models = site.models | sort: "order" %}
+  {% for m in models %}
+  <article class="model-card">
+    {% include model-icon.html id=m.model_id %}
+    <h2><a href="{{ site.baseurl }}{{ m.url }}">{{ m.card_name }}</a></h2>
+    <p class="meta">{{ m.difficulty_label }} · {{ m.time_label }}</p>
+    <p>{{ m.card }}</p>
+    <div class="card-links">
+      <a class="btn primary" href="{{ site.baseurl }}/fold/#m={{ m.model_id }}">Paint this</a>
+      <a class="btn" href="{{ site.baseurl }}{{ m.url }}">Steps</a>
+    </div>
+  </article>
+  {% endfor %}
 </div>
-<script id="prompt-index" type="application/json">
-{%- capture prompt_index -%}
-{%- include prompt-index.liquid -%}
-{%- endcapture -%}
-{{ prompt_index | replace: '<', '\u003c' }}
-</script>
+<script type="module" src="{{ site.baseurl }}/assets/js/home.js"></script>

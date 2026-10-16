@@ -1,0 +1,28 @@
+<svg class="icon" viewBox="0 0 120 80" aria-hidden="true">
+  {% if include.id == "paper-cup" %}
+  <path d="M30 18 h60 l-8 44 h-44 z" fill="#f6e2b0" stroke="#1c1915" stroke-width="2"/>
+  <path d="M38 18 h44 l-4 16 h-36 z" fill="#fffaf3" stroke="#1c1915" stroke-width="2"/>
+  {% elsif include.id == "cat-face" %}
+  <polygon points="28,34 46,12 58,34" fill="#f6e2b0" stroke="#1c1915" stroke-width="2"/>
+  <polygon points="62,34 80,12 92,34" fill="#f6e2b0" stroke="#1c1915" stroke-width="2"/>
+  <ellipse cx="60" cy="48" rx="28" ry="22" fill="#fffaf3" stroke="#1c1915" stroke-width="2"/>
+  <circle cx="50" cy="46" r="2" fill="#1c1915"/>
+  <circle cx="70" cy="46" r="2" fill="#1c1915"/>
+  {% elsif include.id == "dog-face" %}
+  <path d="M24 28 q10 20 14 36" fill="none" stroke="#1c1915" stroke-width="6" stroke-linecap="round"/>
+  <path d="M96 28 q-10 20 -14 36" fill="none" stroke="#1c1915" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="60" cy="46" rx="26" ry="22" fill="#fffaf3" stroke="#1c1915" stroke-width="2"/>
+  <ellipse cx="60" cy="54" rx="8" ry="6" fill="#f6e2b0" stroke="#1c1915"/>
+  {% elsif include.id == "tulip" %}
+  <path d="M60 58 C38 58 30 28 48 24 C52 40 60 42 60 42 C60 42 68 40 72 24 C90 28 82 58 60 58 Z" fill="#c83a2b" stroke="#1c1915" stroke-width="2"/>
+  {% elsif include.id == "samurai-helmet" %}
+  <path d="M22 48 Q60 18 98 48 L86 58 Q60 40 34 58 Z" fill="#243056" stroke="#1c1915" stroke-width="2"/>
+  <path d="M34 28 L46 46" stroke="#e4b24a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M86 28 L74 46" stroke="#e4b24a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M30 58 h60 l-6 10 h-48 z" fill="#f6e2b0" stroke="#1c1915" stroke-width="2"/>
+  {% else %}
+  <ellipse cx="60" cy="48" rx="26" ry="16" fill="#3e9a4a" stroke="#1c1915" stroke-width="2"/>
+  <circle cx="78" cy="44" r="8" fill="#3e9a4a" stroke="#1c1915" stroke-width="2"/>
+  <path d="M36 42 l-14 -8 M36 54 l-16 6 M70 58 l8 12 M50 58 l-6 12" stroke="#1c1915" stroke-width="2" fill="none"/>
+  {% endif %}
+</svg>

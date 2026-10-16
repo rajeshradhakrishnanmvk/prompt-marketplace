@@ -1,50 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-base="{{ site.baseurl }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
-  {% assign summary = page.description | default: site.description %}
-  <meta name="description" content="{{ summary | escape }}">
-  <link rel="canonical" href="{{ page.url | absolute_url }}">
-  <meta property="og:title" content="{% if page.url == "/" %}{{ site.title | escape }}{% else %}{{ page.title | escape }}{% endif %}">
-  <meta property="og:description" content="{{ summary | escape }}">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ page.url | absolute_url }}">
-  <meta name="theme-color" content="#efece6" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121413" media="(prefers-color-scheme: dark)">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f6e56'/%3E%3Cpath d='M8 11h16M8 16h10M8 21h13' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
-  <script>
-    window.PM = {
-      baseurl: {{ site.baseurl | jsonify }},
-      promptsUrl: {{ "/prompts.json" | relative_url | jsonify }},
-      home: {{ "/" | relative_url | jsonify }},
-      repo: {{ site.prompt_repo | jsonify }},
-      branch: {{ site.prompt_branch | jsonify }},
-      siteTitle: {{ site.title | jsonify }}
-    };
+  <title>{% if page.seo_title %}{{ page.seo_title }}{% elsif page.title %}{{ page.title }} · Foldly{% else %}Foldly — Paint a square. Watch it fold.{% endif %}</title>
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  <link rel="canonical" href="{{ site.url }}{{ site.baseurl }}{{ page.url }}">
+  <meta property="og:title" content="{% if page.seo_title %}{{ page.seo_title }}{% elsif page.title %}{{ page.title }}{% else %}Foldly{% endif %}">
+  <meta property="og:description" content="{{ page.description | default: site.description }}">
+  <meta property="og:type" content="{% if page.collection == 'models' %}article{% else %}website{% endif %}">
+  <meta property="og:url" content="{{ site.url }}{{ site.baseurl }}{{ page.url }}">
+  <meta name="theme-color" content="#243056">
+  {% if page.robots %}<meta name="robots" content="{{ page.robots }}">{% endif %}
+  <link rel="icon" href="{{ site.baseurl }}/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/site.css">
+  {% if page.collection == 'models' %}
+  {% assign howto = site.data.models[page.model_id] %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": {{ page.seo_title | jsonify }},
+    "description": {{ page.description | jsonify }},
+    "totalTime": {{ page.total_time | jsonify }},
+    "supply": [{ "@type": "HowToSupply", "name": {{ page.materials | jsonify }} }],
+    "tool": [{ "@type": "HowToTool", "name": "One square of paper" }],
+    "step": [
+      {% for step in page.steps %}
+      {% if step.tip %}{% capture howto_text %}{{ step.text }} {{ step.tip }}{% endcapture %}{% else %}{% assign howto_text = step.text %}{% endif %}
+      {
+        "@type": "HowToStep",
+        "position": {{ forloop.index }},
+        "name": {{ step.text | jsonify }},
+        "text": {{ howto_text | jsonify }}
+      }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]
+  }
   </script>
-  <script>
-    (function () {
-      var narrow = window.matchMedia("(max-width: 959px)").matches;
-      document.documentElement.setAttribute("data-layout", narrow ? "narrow" : "wide");
-    })();
-  </script>
+  {% endif %}
 </head>
-<body>
-  <a class="skip" href="#main">Skip to content</a>
+<body class="{{ page.body_class }}" {% if page.model_id %}data-model="{{ page.model_id }}"{% endif %}>
   {% include header.html %}
-  {{ content }}
-  <div id="live-status" class="visually-hidden" aria-live="polite"></div>
-  <script src="{{ '/assets/js/util.js' | relative_url }}"></script>
-  {% if page.url == "/" %}
-  <script src="{{ '/assets/js/feed.js' | relative_url }}"></script>
-  {% elsif page.url == "/add/" or page.url == "/add" %}
-  <script src="{{ '/assets/js/compose.js' | relative_url }}"></script>
-  {% elsif page.collection == "prompts" %}
-  <script src="{{ '/assets/js/prompt.js' | relative_url }}"></script>
+  <main id="main">
+    {{ content }}
+  </main>
+  {% include footer.html %}
+  {% if page.needs_models or page.collection == 'models' %}
+  <script type="application/json" id="foldly-models">{{ site.data.models | jsonify }}</script>
   {% endif %}
 </body>
 </html>
