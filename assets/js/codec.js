@@ -241,10 +241,10 @@ export async function encodePayload(strokes, rasterFallback) {
     }
   }
   if (token.length > 1800 && typeof rasterFallback === "function") {
-    const png = await rasterFallback();
-    if (png) return png;
+    const raster = await rasterFallback();
+    if (raster) return { token: raster, simplified: raster.length > 1800 };
   }
-  return token;
+  return { token, simplified: false };
 }
 
 export async function decodePayload(token) {
@@ -257,24 +257,26 @@ export async function decodePayload(token) {
 
 /**
  * Raster fallback when a long painting will not fit in the stroke token.
- * JPEG at 320px, stepping down in size and quality, aiming to stay under 2KB.
+ * One JPEG holds the front square over the back square, stepped down in
+ * size and quality until the token is about 1,800 characters.
  */
 export function rasterToken(frontCanvas, backCanvas) {
-  const pack = (canvas, size, quality) => {
+  const pack = (size, quality) => {
     const c = document.createElement("canvas");
     c.width = size;
-    c.height = size;
+    c.height = size * 2;
     const g = c.getContext("2d");
     g.fillStyle = "#fffdf8";
-    g.fillRect(0, 0, size, size);
-    g.drawImage(canvas, 0, 0, size, size);
+    g.fillRect(0, 0, size, size * 2);
+    g.drawImage(frontCanvas, 0, 0, size, size);
+    g.drawImage(backCanvas, 0, size, size, size);
     const url = c.toDataURL("image/jpeg", quality);
-    return url.slice(url.indexOf(",") + 1).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    return `j${url.slice(url.indexOf(",") + 1).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
   };
   let best = null;
-  for (const size of [320, 256, 192]) {
-    for (const quality of [0.72, 0.56, 0.42]) {
-      const token = `j${pack(frontCanvas, size, quality)}~${pack(backCanvas, size, quality)}`;
+  for (const size of [128, 96, 72, 56, 40, 28, 20]) {
+    for (const quality of [0.55, 0.36, 0.22, 0.12]) {
+      const token = pack(size, quality);
       if (!best || token.length < best.length) best = token;
       if (token.length <= 1800) return token;
     }
@@ -285,7 +287,8 @@ export function rasterToken(frontCanvas, backCanvas) {
 export function rasterCanvases(token) {
   const mime = token[0] === "j" ? "image/jpeg" : "image/png";
   const body = token.slice(1);
-  const [a, b] = body.split("~");
   const toUrl = (part) => `data:${mime};base64,${part.replace(/-/g, "+").replace(/_/g, "/")}`;
-  return { front: toUrl(a), back: toUrl(b || a) };
+  if (!body.includes("~")) return { front: toUrl(body), back: null, stacked: true };
+  const [a, b] = body.split("~");
+  return { front: toUrl(a), back: toUrl(b || a), stacked: false };
 }

@@ -1,4 +1,4 @@
-import { paintProjection, projectPolygons } from "./project.js";
+import { frameFit, paintProjection, projectPolygons } from "./project.js";
 import { prepare, sample } from "./runtime.js";
 
 /**
@@ -56,6 +56,17 @@ export function createFoldView(host, model, options = {}) {
   const listeners = new Set();
   let frontImage = blankPaper("front");
   let backImage = blankPaper("back");
+  let fitKey = "";
+  let fit = { scale: 1, dx: 0, dy: 0 };
+
+  function fitFor(size) {
+    const key = `${rx.toFixed(2)}|${ry.toFixed(2)}|${rz}|${persp}|${size}`;
+    if (key !== fitKey) {
+      fitKey = key;
+      fit = frameFit(model, prep, { rx, ry, rz, perspective: persp }, size, 0.06);
+    }
+    return fit;
+  }
 
   function state() {
     const sampled = override
@@ -86,17 +97,23 @@ export function createFoldView(host, model, options = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
     const camera = cameraFor(sampled);
+    const placed = fitFor(size);
     if (debug) {
       const polys = projectPolygons(model, prep, sampled.angles, camera, size);
       polys.forEach((poly, index) => {
         ctx.beginPath();
-        poly.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        poly.pts.forEach((p, i) => {
+          const x = p.x * placed.scale + placed.dx;
+          const y = p.y * placed.scale + placed.dy;
+          if (i) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        });
         ctx.closePath();
         ctx.fillStyle = DEBUG_COLORS[index % DEBUG_COLORS.length];
         ctx.fill();
       });
     } else {
-      paintProjection(ctx, model, prep, sampled.angles, camera, frontImage, backImage, size);
+      paintProjection(ctx, model, prep, sampled.angles, camera, frontImage, backImage, size, placed);
     }
     for (const fn of listeners) fn(viewState(sampled));
   }

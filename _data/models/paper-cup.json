@@ -5,10 +5,10 @@
   "note": "",
   "exterior": "painted",
   "camera": {
-    "rx": 55,
-    "ry": 25,
-    "rz": 40,
-    "perspective": 1000
+    "rx": 48,
+    "ry": 40,
+    "rz": 8,
+    "perspective": 1100
   },
   "flaps": [
     {
@@ -348,7 +348,7 @@
       "moves": [
         {
           "flap": "front-main",
-          "angle": 260
+          "angle": 250
         }
       ]
     }

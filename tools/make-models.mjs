@@ -100,7 +100,7 @@ function paperCup() {
     difficulty: 1,
     note: "",
     exterior: "painted",
-    camera: { rx: 55, ry: 25, rz: 40, perspective: 1000 },
+    camera: { rx: 48, ry: 40, rz: 8, perspective: 1100 },
     flaps,
     creases: [
       [P(1, 0), P(0, 1), "valley"],
@@ -137,7 +137,7 @@ function paperCup() {
         label: "Gently squeeze the sides to open the cup.",
         dur: 1.7,
         flip: 0,
-        moves: [{ flap: "front-main", angle: 260 }],
+        moves: [{ flap: "front-main", angle: 250 }],
       },
     ],
   };

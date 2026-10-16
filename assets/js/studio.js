@@ -93,6 +93,11 @@ function showCreases() {
 }
 
 function syncTools() {
+  const hiddenBack = Boolean(models[modelId] && models[modelId].exterior === "painted");
+  if (hiddenBack && paint.tool.side === "back") paint.tool.side = "front";
+  const backBtn = document.getElementById("side-back");
+  backBtn.disabled = hiddenBack;
+  document.getElementById("side-note").hidden = !hiddenBack;
   document.querySelectorAll("[data-tool]").forEach((btn) => {
     btn.setAttribute("aria-pressed", String(btn.dataset.tool === paint.tool.tool));
   });
@@ -126,6 +131,7 @@ function selectModel(id, { push = true } = {}) {
   noteEl.hidden = !noteEl.textContent;
   choices.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.model === id)));
   showCreases();
+  syncTools();
   if (push) writeHash(false, null, true);
   if (mode === "fold") mountFold(false);
 }
@@ -147,10 +153,26 @@ function routeFromLocation() {
   if (id !== modelId) selectModel(id, { push: false });
 }
 
+let shareSimplified = false;
+
 async function ensureToken() {
-  if (raster) return raster.token;
+  if (raster) {
+    shareSimplified = false;
+    return raster.token;
+  }
   const strokes = paint.getStrokes();
-  return encodePayload(strokes, () => rasterToken(frontCanvas, backCanvas));
+  const packed = await encodePayload(strokes, () => rasterToken(frontCanvas, backCanvas));
+  shareSimplified = Boolean(packed.simplified);
+  return packed.token;
+}
+
+function shareMessage(copied) {
+  if (shareSimplified) {
+    return copied
+      ? "Link copied. The shared copy is simplified so the link stays short."
+      : "The shared copy is simplified so the link stays short.";
+  }
+  return copied ? "Link copied! Paste it anywhere to share." : "";
 }
 
 function mountFold(autoplay) {
@@ -336,6 +358,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
     const token = await ensureToken();
     writeHash(true, token);
     shareUrl.value = location.href;
+    if (shareSimplified) setStatus(shareMessage(false));
   } catch (err) {
     shareUrl.value = location.href;
     setStatus("Couldn't copy the link. Try again, or copy it from the box below.");
@@ -348,7 +371,7 @@ document.getElementById("copy-link").addEventListener("click", async () => {
     writeHash(true, token);
     shareUrl.value = location.href;
     await navigator.clipboard.writeText(shareUrl.value);
-    setStatus("Link copied! Paste it anywhere to share.");
+    setStatus(shareMessage(true));
   } catch (err) {
     shareUrl.focus();
     shareUrl.select();
@@ -407,6 +430,7 @@ nativeBtn.addEventListener("click", async () => {
     const token = await ensureToken();
     writeHash(true, token);
     shareUrl.value = location.href;
+    if (shareSimplified) setStatus(shareMessage(false));
     await navigator.share({ title: `Foldly — ${models[modelId].name}`, text: "Paint a square. Watch it fold.", url: shareUrl.value });
   } catch (err) {
     if (err && err.name === "AbortError") return;
@@ -423,7 +447,7 @@ async function bootShared() {
     if (decoded.type === "raster") {
       const urls = rasterCanvases(decoded.token);
       raster = { token: d };
-      await paint.loadRaster(urls.front, urls.back);
+      await paint.loadRaster(urls.front, urls.back, urls.stacked);
     }
     remixBanner.hidden = false;
     mountFold(!reduced);

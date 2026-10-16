@@ -252,15 +252,35 @@ export function createPaint(frontCanvas, backCanvas) {
       strokes = next || [];
       replay();
     },
-    async loadRaster(frontUrl, backUrl) {
+    async loadRaster(frontUrl, backUrl, stacked) {
       undoStack = [];
       redoStack = [];
       strokes = [];
+      if (stacked) {
+        await drawStacked(ctx.front, ctx.back, frontUrl);
+        return;
+      }
       await drawUrl(ctx.front, frontUrl);
       await drawUrl(ctx.back, backUrl);
     },
     replay,
   };
+}
+
+function drawStacked(frontCtx, backCtx, url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const half = img.height / 2;
+      frontCtx.clearRect(0, 0, 1024, 1024);
+      backCtx.clearRect(0, 0, 1024, 1024);
+      frontCtx.drawImage(img, 0, 0, img.width, half, 0, 0, 1024, 1024);
+      backCtx.drawImage(img, 0, half, img.width, img.height - half, 0, 0, 1024, 1024);
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = url;
+  });
 }
 
 function drawUrl(context, url) {

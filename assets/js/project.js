@@ -1,5 +1,5 @@
 import { multiply, rotateX, rotateY, rotateZ, transformPoint } from "./matrix.js";
-import { worldMatrices } from "./runtime.js";
+import { sample, worldMatrices } from "./runtime.js";
 
 /**
  * Project flap polygons with the same hinge matrices the CSS view uses.
@@ -105,8 +105,58 @@ export function drawTexturedTriangle(ctx, image, s0, s1, s2, d0, d1, d2) {
   ctx.restore();
 }
 
-export function paintProjection(ctx, model, prep, angles, camera, front, back, size) {
-  const tris = projectFlaps(model, prep, angles, camera, size);
+function movePoint(p, fit) {
+  if (!fit) return p;
+  return { ...p, x: p.x * fit.scale + fit.dx, y: p.y * fit.scale + fit.dy };
+}
+
+/**
+ * Scale that keeps every pose in the timeline inside the frame.
+ * baseCamera.ry is the resting yaw; each step's flip is added on top.
+ */
+export function frameFit(model, prep, baseCamera, size, margin = 0.06) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const steps = 16;
+  for (let i = 0; i <= steps; i += 1) {
+    const sampled = sample(prep, (i / steps) * prep.duration);
+    const camera = {
+      rx: baseCamera.rx || 0,
+      ry: (baseCamera.ry || 0) + (sampled.flip || 0),
+      rz: baseCamera.rz || 0,
+      perspective: baseCamera.perspective,
+      flip: 0,
+    };
+    const tris = projectFlaps(model, prep, sampled.angles, camera, size);
+    for (const tri of tris) {
+      for (const p of [tri.p0, tri.p1, tri.p2]) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      }
+    }
+  }
+  if (!Number.isFinite(minX)) return { scale: 1, dx: 0, dy: 0 };
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const pad = size * margin;
+  const inner = Math.max(1, size - pad * 2);
+  const scale = Math.min(inner / bw, inner / bh);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  return { scale, dx: size / 2 - cx * scale, dy: size / 2 - cy * scale };
+}
+
+export function paintProjection(ctx, model, prep, angles, camera, front, back, size, fit) {
+  const tris = projectFlaps(model, prep, angles, camera, size).map((tri) => ({
+    ...tri,
+    p0: movePoint(tri.p0, fit),
+    p1: movePoint(tri.p1, fit),
+    p2: movePoint(tri.p2, fit),
+  }));
   const w = front.width || 1024;
   const h = front.height || 1024;
   for (const tri of tris) {
