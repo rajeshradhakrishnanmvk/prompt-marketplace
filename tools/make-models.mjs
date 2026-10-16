@@ -99,7 +99,8 @@ function paperCup() {
     name: "Paper Cup",
     difficulty: 1,
     note: "",
-    camera: { rx: -68, ry: 24, rz: 45, perspective: 980 },
+    exterior: "painted",
+    camera: { rx: 55, ry: 25, rz: 40, perspective: 1000 },
     flaps,
     creases: [
       [P(1, 0), P(0, 1), "valley"],
@@ -136,7 +137,7 @@ function paperCup() {
         label: "Gently squeeze the sides to open the cup.",
         dur: 1.7,
         flip: 0,
-        moves: [{ flap: "front-main", angle: 132 }],
+        moves: [{ flap: "front-main", angle: 260 }],
       },
     ],
   };
@@ -235,6 +236,7 @@ function cat() {
     name: "Cat Face",
     difficulty: 1,
     note: "",
+    exterior: "painted",
     camera: { rx: -8, ry: -6, rz: 225, perspective: 1600 },
     flaps,
     creases: [
@@ -286,12 +288,13 @@ function cat() {
 }
 
 function dog() {
-  // Side corners fold down the cheeks. (1,0) reflects to about (0.30, 0.20).
-  const earL = [P(1, 0), P(0.62, 0), P(0.72, 0.28)];
+  // Crease from the bottom edge to the diagonal so (1,0) reflects to about
+  // (0.58, -0.10), beside and below the head. The other ear mirrors it.
+  const earL = [P(1, 0), P(0.78, 0), P(0.71, 0.29)];
   const nose = [P(0, 0), P(0.16, 0), P(0.08, 0.08)];
-  const faceLRest = [P(0.16, 0), P(0.62, 0), P(0.72, 0.28), P(0.5, 0.5), P(0.08, 0.08)];
-  const earR = [P(0, 1), P(0, 0.62), P(0.28, 0.72)];
-  const faceR = [P(0, 0), P(0, 0.62), P(0.28, 0.72), P(0.5, 0.5)];
+  const faceLRest = [P(0.16, 0), P(0.78, 0), P(0.71, 0.29), P(0.5, 0.5), P(0.08, 0.08)];
+  const earR = [P(0, 1), P(0, 0.78), P(0.29, 0.71)];
+  const faceR = [P(0, 0), P(0, 0.78), P(0.29, 0.71), P(0.5, 0.5)];
   const backTop = [P(0.92, 0), P(1, 0), P(0, 1), P(0, 0.92)];
   const backRest = [P(0, 0), P(0.92, 0), P(0, 0.92)];
   const flaps = [
@@ -300,15 +303,15 @@ function dog() {
     anchor("front", null, hinge(P(1, 0), P(0, 1))),
     flap("face-l", "front", RP(faceLRest), null),
     flap("nose", "face-l", RP(nose), hingeR(P(0.16, 0), P(0.08, 0.08))),
-    flap("ear-l", "face-l", RP(earL), hingeR(P(0.62, 0), P(0.72, 0.28))),
+    flap("ear-l", "face-l", RP(earL), hingeR(P(0.78, 0), P(0.71, 0.29))),
     flap("face-r", "front", RP(faceR), hingeR(P(0, 0), P(0.5, 0.5))),
-    flap("ear-r", "face-r", RP(earR), hingeR(P(0, 0.62), P(0.28, 0.72))),
+    flap("ear-r", "face-r", RP(earR), hingeR(P(0, 0.78), P(0.29, 0.71))),
   ];
   const model = { flaps, steps: [] };
   const base = { front: 180 };
   const half = pickFlat(model, base, "face-r", Rpt(P(0, 0.8)), P(0.8, 0));
-  const earLA = pickFlat(model, base, "ear-l", Rpt(P(1, 0)), P(0.3, 0.2));
-  const earRA = pickFlat(model, base, "ear-r", Rpt(P(0, 1)), P(0.2, 0.3));
+  const earLA = pickFlat(model, base, "ear-l", Rpt(P(1, 0)), P(0.584, -0.1));
+  const earRA = pickFlat(model, base, "ear-r", Rpt(P(0, 1)), P(-0.1, 0.584));
   const backAng = 180;
   return {
     id: "dog-face",
@@ -320,8 +323,8 @@ function dog() {
     creases: [
       [P(1, 0), P(0, 1), "valley"],
       [P(0, 0), P(0.5, 0.5), "valley"],
-      [P(0.62, 0), P(0.72, 0.28), "valley"],
-      [P(0, 0.62), P(0.28, 0.72), "valley"],
+      [P(0.78, 0), P(0.71, 0.29), "valley"],
+      [P(0, 0.78), P(0.29, 0.71), "valley"],
       [P(0.16, 0), P(0.08, 0.08), "mountain"],
       [P(0.92, 0), P(0, 0.92), "mountain"],
     ],
@@ -376,6 +379,7 @@ function tulip() {
     name: "Tulip",
     difficulty: 1,
     note: "This tulip is the flat flower head, with no stem.",
+    exterior: "painted",
     camera: { rx: -12, ry: -8, rz: 225, perspective: 1600 },
     flaps,
     creases: [

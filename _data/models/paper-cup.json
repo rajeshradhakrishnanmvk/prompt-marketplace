@@ -3,11 +3,12 @@
   "name": "Paper Cup",
   "difficulty": 1,
   "note": "",
+  "exterior": "painted",
   "camera": {
-    "rx": -68,
-    "ry": 24,
-    "rz": 45,
-    "perspective": 980
+    "rx": 55,
+    "ry": 25,
+    "rz": 40,
+    "perspective": 1000
   },
   "flaps": [
     {
@@ -347,7 +348,7 @@
       "moves": [
         {
           "flap": "front-main",
-          "angle": 132
+          "angle": 260
         }
       ]
     }

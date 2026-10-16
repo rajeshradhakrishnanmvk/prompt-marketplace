@@ -3,6 +3,7 @@
   "name": "Cat Face",
   "difficulty": 1,
   "note": "",
+  "exterior": "painted",
   "camera": {
     "rx": -8,
     "ry": -6,

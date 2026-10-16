@@ -3,6 +3,7 @@
   "name": "Tulip",
   "difficulty": 1,
   "note": "This tulip is the flat flower head, with no stem.",
+  "exterior": "painted",
   "camera": {
     "rx": -12,
     "ry": -8,

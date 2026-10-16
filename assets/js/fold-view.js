@@ -1,11 +1,10 @@
+import { paintProjection, projectPolygons } from "./project.js";
 import { prepare, sample } from "./runtime.js";
 
 /**
- * CSS 3D fold.
- * Each layer is translateZ(0.1px * index). Clip-paths sit on an inner skin,
- * not on the element that also has backface-visibility and a 3D transform.
- * WebKit drops the front face when those three are on the same node inside
- * preserve-3d. The skin is flattened into the face, then the face is posed.
+ * Fold view drawn into a canvas.
+ * WebKit drops images and gradients on CSS 3D planes, so both browsers use
+ * the same projection as the share picture.
  */
 
 function el(tag, className) {
@@ -14,15 +13,18 @@ function el(tag, className) {
   return node;
 }
 
-function clipPath(poly, mirrorX) {
-  const pts = poly.map(([x, y]) => {
-    const X = mirrorX ? 1 - x : x;
-    return `${+(X * 100).toFixed(3)}% ${+(y * 100).toFixed(3)}%`;
-  });
-  return `polygon(${pts.join(",")})`;
-}
-
 const DEBUG_COLORS = ["#e07a5f", "#3d405b", "#81b29a", "#f2cc8f", "#e07a5f", "#5c6bc0", "#ef9a9a", "#80cbc4", "#ffd54f", "#9575cd", "#a1887f", "#4db6ac"];
+
+function mirrorSource(source) {
+  const canvas = document.createElement("canvas");
+  canvas.width = source.width || source.naturalWidth || 1024;
+  canvas.height = source.height || source.naturalHeight || 1024;
+  const g = canvas.getContext("2d");
+  g.translate(canvas.width, 0);
+  g.scale(-1, 1);
+  g.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
 
 export function reducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -34,41 +36,11 @@ export function createFoldView(host, model, options = {}) {
   const stage = el("div", "stage");
   stage.setAttribute("role", "application");
   stage.setAttribute("aria-label", `${model.name}. Drag to turn the paper.`);
-  const rig = el("div", "rig");
-  stage.append(rig);
+  const canvas = el("canvas", "fold-canvas");
+  canvas.setAttribute("aria-hidden", "true");
+  stage.append(canvas);
   host.append(stage);
   const persp = (model.camera && model.camera.perspective) || 900;
-  stage.style.perspective = `${persp}px`;
-
-  const nodes = {};
-  const faces = {};
-  model.flaps.forEach((flap, index) => {
-    const node = el("div", "flap");
-    node.dataset.id = flap.id;
-    node.dataset.layer = String(index);
-    if (flap.poly && flap.poly.length >= 3) {
-      const front = el("div", "face front");
-      const back = el("div", "face back");
-      const frontSkin = el("div", "skin");
-      const backSkin = el("div", "skin");
-      const c1 = clipPath(flap.poly, false);
-      const c2 = clipPath(flap.poly, true);
-      frontSkin.style.clipPath = c1;
-      frontSkin.style.webkitClipPath = c1;
-      backSkin.style.clipPath = c2;
-      backSkin.style.webkitClipPath = c2;
-      front.append(frontSkin);
-      back.append(backSkin);
-      node.append(front, back);
-      faces[flap.id] = { front, back, frontSkin, backSkin };
-    }
-    nodes[flap.id] = node;
-  });
-  for (const flap of model.flaps) {
-    const parent = flap.parent && nodes[flap.parent] ? nodes[flap.parent] : rig;
-    if (flap.parent && !nodes[flap.parent]) console.warn("Missing parent", flap.parent);
-    parent.append(nodes[flap.id]);
-  }
 
   let rx = (model.camera && model.camera.rx) || -58;
   let ry = (model.camera && model.camera.ry) || -32;
@@ -82,14 +54,8 @@ export function createFoldView(host, model, options = {}) {
   let override = null;
   const loop = Boolean(options.loop);
   const listeners = new Set();
-
-  function cssFor(flap, angle) {
-    const layer = model.flaps.indexOf(flap);
-    const z = (layer * 0.1).toFixed(2);
-    if (!flap.hinge) return `translateZ(${z}px)`;
-    const [ax, ay] = flap.hinge.axis;
-    return `translateZ(${z}px) rotate3d(${ax}, ${ay}, 0, ${angle}deg)`;
-  }
+  let frontImage = blankPaper("front");
+  let backImage = blankPaper("back");
 
   function state() {
     const sampled = override
@@ -98,32 +64,40 @@ export function createFoldView(host, model, options = {}) {
     return sampled;
   }
 
+  function cameraFor(sampled) {
+    return {
+      rx,
+      ry: ry + (sampled.flip || 0),
+      rz,
+      perspective: persp,
+      flip: 0,
+    };
+  }
+
   function apply() {
     const sampled = state();
-    for (const flap of model.flaps) {
-      const node = nodes[flap.id];
-      const angle = sampled.angles[flap.id] || 0;
-      node.style.transform = cssFor(flap, angle);
-      node.style.transformOrigin = flap.hinge
-        ? `${flap.hinge.p[0] * 100}% ${flap.hinge.p[1] * 100}%`
-        : "50% 50%";
-      if (faces[flap.id]) {
-        const { frontSkin, backSkin } = faces[flap.id];
-        if (debug) {
-          const color = DEBUG_COLORS[model.flaps.indexOf(flap) % DEBUG_COLORS.length];
-          frontSkin.style.backgroundImage = "none";
-          frontSkin.style.backgroundColor = color;
-          backSkin.style.backgroundImage = "none";
-          backSkin.style.backgroundColor = "#f6e2b0";
-        } else if (!frontSkin.dataset.textured) {
-          frontSkin.style.backgroundImage = "";
-          frontSkin.style.backgroundColor = "";
-          backSkin.style.backgroundImage = "";
-          backSkin.style.backgroundColor = "";
-        }
-      }
+    const size = Math.max(2, Math.floor(stage.clientWidth || host.clientWidth || 640));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (canvas.width !== Math.floor(size * dpr)) {
+      canvas.width = Math.floor(size * dpr);
+      canvas.height = Math.floor(size * dpr);
     }
-    rig.style.transform = `rotateX(${rx}deg) rotateY(${ry + (sampled.flip || 0)}deg) rotateZ(${rz}deg)`;
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    const camera = cameraFor(sampled);
+    if (debug) {
+      const polys = projectPolygons(model, prep, sampled.angles, camera, size);
+      polys.forEach((poly, index) => {
+        ctx.beginPath();
+        poly.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+        ctx.fillStyle = DEBUG_COLORS[index % DEBUG_COLORS.length];
+        ctx.fill();
+      });
+    } else {
+      paintProjection(ctx, model, prep, sampled.angles, camera, frontImage, backImage, size);
+    }
     for (const fn of listeners) fn(viewState(sampled));
   }
 
@@ -208,44 +182,27 @@ export function createFoldView(host, model, options = {}) {
   stage.addEventListener("pointerup", endDrag);
   stage.addEventListener("pointercancel", endDrag);
 
-  function canvasUrl(source, mirror) {
-    if (typeof source === "string" && !mirror) return Promise.resolve(source);
-    return new Promise((resolve) => {
-      const draw = (img) => {
-        const c = document.createElement("canvas");
-        c.width = img.width || img.naturalWidth;
-        c.height = img.height || img.naturalHeight;
-        const g = c.getContext("2d");
-        if (mirror) {
-          g.translate(c.width, 0);
-          g.scale(-1, 1);
-        }
-        g.drawImage(img, 0, 0);
-        resolve(c.toDataURL("image/png"));
-      };
-      if (typeof source === "string") {
-        const img = new Image();
-        img.onload = () => draw(img);
-        img.src = source;
-      } else draw(source);
+  const resize = new ResizeObserver(() => {
+    if (!destroyed) apply();
+  });
+  resize.observe(stage);
+
+  function loadSource(source) {
+    if (typeof source !== "string") return Promise.resolve(source);
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("texture"));
+      img.src = source;
     });
   }
 
   function setTextures(frontSource, backSource) {
     debug = false;
-    return Promise.all([canvasUrl(frontSource, false), canvasUrl(backSource, true)]).then(([frontUrl, backUrl]) => {
-      rig.style.setProperty("--paper-front", `url("${frontUrl}")`);
-      rig.style.setProperty("--paper-back", `url("${backUrl}")`);
-      for (const flap of model.flaps) {
-        if (!faces[flap.id]) continue;
-        const { frontSkin, backSkin } = faces[flap.id];
-        frontSkin.dataset.textured = "1";
-        backSkin.dataset.textured = "1";
-        frontSkin.style.backgroundColor = "#fffdf8";
-        backSkin.style.backgroundColor = "#f6e2b0";
-        frontSkin.style.backgroundImage = `url("${frontUrl}")`;
-        backSkin.style.backgroundImage = `url("${backUrl}")`;
-      }
+    return Promise.all([loadSource(frontSource), loadSource(backSource)]).then(([front, back]) => {
+      frontImage = front;
+      backImage = model.exterior === "painted" ? mirrorSource(front) : back;
+      apply();
     });
   }
 
@@ -287,6 +244,7 @@ export function createFoldView(host, model, options = {}) {
     },
     destroy() {
       destroyed = true;
+      resize.disconnect();
       stop();
       host.innerHTML = "";
     },

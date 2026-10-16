@@ -39,6 +39,24 @@ function choiceData(id) {
   return choices.find((b) => b.dataset.model === id);
 }
 
+function foldTextures() {
+  if (models[modelId] && models[modelId].exterior === "painted") return [frontCanvas, frontCanvas];
+  return [frontCanvas, backCanvas];
+}
+
+function exportTextures() {
+  const [front, back] = foldTextures();
+  if (back !== front) return [front, back];
+  const copy = document.createElement("canvas");
+  copy.width = front.width;
+  copy.height = front.height;
+  const g = copy.getContext("2d");
+  g.translate(copy.width, 0);
+  g.scale(-1, 1);
+  g.drawImage(front, 0, 0);
+  return [front, copy];
+}
+
 function showCreases() {
   const model = models[modelId];
   const ns = "http://www.w3.org/2000/svg";
@@ -108,13 +126,25 @@ function selectModel(id, { push = true } = {}) {
   noteEl.hidden = !noteEl.textContent;
   choices.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.model === id)));
   showCreases();
-  if (push) writeHash(false);
+  if (push) writeHash(false, null, true);
   if (mode === "fold") mountFold(false);
 }
 
-function writeHash(includePayload, token) {
+function writeHash(includePayload, token, push) {
   const hash = includePayload && token ? `#m=${encodeURIComponent(modelId)}&d=${token}` : `#m=${encodeURIComponent(modelId)}`;
-  history.replaceState(null, "", hash);
+  const url = `${location.pathname}${location.search}${hash}`;
+  if (push) history.pushState(null, "", url);
+  else history.replaceState(null, "", url);
+}
+
+function routeFromLocation() {
+  const next = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const id = next.get("m");
+  if (!id || !models[id]) {
+    if (modelId !== "paper-cup") selectModel("paper-cup", { push: false });
+    return;
+  }
+  if (id !== modelId) selectModel(id, { push: false });
 }
 
 async function ensureToken() {
@@ -131,7 +161,8 @@ function mountFold(autoplay) {
   foldUi.hidden = false;
   mode = "fold";
   view = createFoldView(foldHost, models[modelId], { autoplay: autoplay && !reduced, start: 0 });
-  view.setTextures(frontCanvas, backCanvas);
+  const papers = foldTextures();
+  view.setTextures(papers[0], papers[1]);
   const reflect = () => {
     const s = view.getState();
     scrub.value = String(Math.round(s.t * 1000));
@@ -330,7 +361,8 @@ document.getElementById("download-png").addEventListener("click", () => {
     const state = view ? view.getState() : null;
     const camera = state ? state.camera : { ...(models[modelId].camera || {}), flip: 0 };
     const angles = state ? state.angles : {};
-    const card = renderCard(models[modelId], angles, camera, frontCanvas, backCanvas);
+    const papers = exportTextures();
+    const card = renderCard(models[modelId], angles, camera, papers[0], papers[1]);
     const a = document.createElement("a");
     a.href = card.toDataURL("image/png");
     a.download = `foldly-${modelId}.png`;
@@ -350,7 +382,8 @@ document.getElementById("download-video").addEventListener("click", async () => 
     const camera = state
       ? { rx: state.camera.rx, ry: state.camera.ry, rz: state.camera.rz, perspective: state.camera.perspective }
       : { ...(models[modelId].camera || {}) };
-    const { blob, ext } = await recordFold(models[modelId], camera, frontCanvas, backCanvas);
+    const papers = exportTextures();
+    const { blob, ext } = await recordFold(models[modelId], camera, papers[0], papers[1]);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `foldly-${modelId}.${ext}`;
@@ -405,11 +438,8 @@ backCanvas.addEventListener("pointerup", () => syncTools());
 frontCanvas.addEventListener("pointerdown", () => syncTools());
 backCanvas.addEventListener("pointerdown", () => syncTools());
 
-window.addEventListener("hashchange", () => {
-  const next = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const id = next.get("m");
-  if (id && models[id] && id !== modelId) selectModel(id, { push: false });
-});
+window.addEventListener("hashchange", routeFromLocation);
+window.addEventListener("popstate", routeFromLocation);
 
 selectModel(modelId, { push: false });
 syncTools();

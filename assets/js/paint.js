@@ -163,8 +163,8 @@ export function createPaint(frontCanvas, backCanvas) {
   function pointerPos(canvas, e) {
     const r = canvas.getBoundingClientRect();
     return [
-      clamp(((e.clientX - r.left) / r.width) * 1023, 0, 1023),
-      clamp(((e.clientY - r.top) / r.height) * 1023, 0, 1023),
+      clamp(Math.round(((e.clientX - r.left) / r.width) * 1023), 0, 1023),
+      clamp(Math.round(((e.clientY - r.top) / r.height) * 1023), 0, 1023),
     ];
   }
 
