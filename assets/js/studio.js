@@ -358,7 +358,10 @@ document.getElementById("download-video").addEventListener("click", async () => 
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     setStatus("Video ready! Look in your downloads.");
   } catch (err) {
-    setStatus("Couldn't make your video. Please try again in a moment.");
+    const unsupported = err && (err.message === "no-recorder" || err.message === "no-capture");
+    setStatus(unsupported
+      ? "This browser can't record a folding video. You can still copy the link or download a picture."
+      : "Couldn't make your video. Please try again in a moment.");
   } finally {
     btn.disabled = false;
   }
@@ -401,6 +404,12 @@ frontCanvas.addEventListener("pointerup", () => syncTools());
 backCanvas.addEventListener("pointerup", () => syncTools());
 frontCanvas.addEventListener("pointerdown", () => syncTools());
 backCanvas.addEventListener("pointerdown", () => syncTools());
+
+window.addEventListener("hashchange", () => {
+  const next = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const id = next.get("m");
+  if (id && models[id] && id !== modelId) selectModel(id, { push: false });
+});
 
 selectModel(modelId, { push: false });
 syncTools();

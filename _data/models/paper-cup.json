@@ -4,10 +4,10 @@
   "difficulty": 1,
   "note": "",
   "camera": {
-    "rx": -56,
-    "ry": -26,
+    "rx": -68,
+    "ry": 24,
     "rz": 45,
-    "perspective": 1100
+    "perspective": 980
   },
   "flaps": [
     {
@@ -19,12 +19,12 @@
           0
         ],
         [
-          1,
-          0
+          0.5858,
+          0.4142
         ],
         [
-          0,
-          1
+          0.4142,
+          0.5858
         ],
         [
           0,
@@ -32,6 +32,62 @@
         ]
       ],
       "hinge": null
+    },
+    {
+      "id": "back-right",
+      "parent": "back-main",
+      "poly": [
+        [
+          0.4142,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0.5858,
+          0.4142
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.4142,
+          0
+        ],
+        "axis": [
+          0.1716,
+          0.4142
+        ]
+      }
+    },
+    {
+      "id": "back-left",
+      "parent": "back-main",
+      "poly": [
+        [
+          0,
+          0.4142
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0.4142,
+          0.5858
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0,
+          0.4142
+        ],
+        "axis": [
+          0.4142,
+          0.1716
+        ]
+      }
     },
     {
       "id": "back-tip",
@@ -242,6 +298,10 @@
         {
           "flap": "front-right",
           "angle": 180
+        },
+        {
+          "flap": "back-right",
+          "angle": 180
         }
       ]
     },
@@ -251,6 +311,10 @@
       "moves": [
         {
           "flap": "front-left",
+          "angle": 180
+        },
+        {
+          "flap": "back-left",
           "angle": 180
         }
       ]
@@ -272,7 +336,7 @@
       "moves": [
         {
           "flap": "back-tip",
-          "angle": -168
+          "angle": -180
         }
       ]
     },
@@ -283,7 +347,7 @@
       "moves": [
         {
           "flap": "front-main",
-          "angle": 118
+          "angle": 132
         }
       ]
     }

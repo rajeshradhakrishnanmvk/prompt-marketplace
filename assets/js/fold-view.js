@@ -2,10 +2,10 @@ import { prepare, sample } from "./runtime.js";
 
 /**
  * CSS 3D fold.
- * Clip-paths sit on the face leaves, not on ancestors that contain child
- * flaps, so a parent clip cannot slice a nested flap (the Safari failure
- * mode for nested clip-path textures). -webkit-clip-path is set as well.
- * Each layer is translateZ(0.1px * index).
+ * Each layer is translateZ(0.1px * index). Clip-paths sit on an inner skin,
+ * not on the element that also has backface-visibility and a 3D transform.
+ * WebKit drops the front face when those three are on the same node inside
+ * preserve-3d. The skin is flattened into the face, then the face is posed.
  */
 
 function el(tag, className) {
@@ -49,14 +49,18 @@ export function createFoldView(host, model, options = {}) {
     if (flap.poly && flap.poly.length >= 3) {
       const front = el("div", "face front");
       const back = el("div", "face back");
+      const frontSkin = el("div", "skin");
+      const backSkin = el("div", "skin");
       const c1 = clipPath(flap.poly, false);
       const c2 = clipPath(flap.poly, true);
-      front.style.clipPath = c1;
-      front.style.webkitClipPath = c1;
-      back.style.clipPath = c2;
-      back.style.webkitClipPath = c2;
+      frontSkin.style.clipPath = c1;
+      frontSkin.style.webkitClipPath = c1;
+      backSkin.style.clipPath = c2;
+      backSkin.style.webkitClipPath = c2;
+      front.append(frontSkin);
+      back.append(backSkin);
       node.append(front, back);
-      faces[flap.id] = { front, back };
+      faces[flap.id] = { front, back, frontSkin, backSkin };
     }
     nodes[flap.id] = node;
   });
@@ -104,17 +108,18 @@ export function createFoldView(host, model, options = {}) {
         ? `${flap.hinge.p[0] * 100}% ${flap.hinge.p[1] * 100}%`
         : "50% 50%";
       if (faces[flap.id]) {
+        const { frontSkin, backSkin } = faces[flap.id];
         if (debug) {
           const color = DEBUG_COLORS[model.flaps.indexOf(flap) % DEBUG_COLORS.length];
-          faces[flap.id].front.style.backgroundImage = "none";
-          faces[flap.id].front.style.backgroundColor = color;
-          faces[flap.id].back.style.backgroundImage = "none";
-          faces[flap.id].back.style.backgroundColor = "#f6e2b0";
-        } else {
-          faces[flap.id].front.style.backgroundImage = "";
-          faces[flap.id].front.style.backgroundColor = "";
-          faces[flap.id].back.style.backgroundImage = "";
-          faces[flap.id].back.style.backgroundColor = "";
+          frontSkin.style.backgroundImage = "none";
+          frontSkin.style.backgroundColor = color;
+          backSkin.style.backgroundImage = "none";
+          backSkin.style.backgroundColor = "#f6e2b0";
+        } else if (!frontSkin.dataset.textured) {
+          frontSkin.style.backgroundImage = "";
+          frontSkin.style.backgroundColor = "";
+          backSkin.style.backgroundImage = "";
+          backSkin.style.backgroundColor = "";
         }
       }
     }
@@ -228,16 +233,19 @@ export function createFoldView(host, model, options = {}) {
 
   function setTextures(frontSource, backSource) {
     debug = false;
-    for (const flap of model.flaps) {
-      if (!faces[flap.id]) continue;
-      faces[flap.id].front.style.backgroundImage = "";
-      faces[flap.id].front.style.backgroundColor = "";
-      faces[flap.id].back.style.backgroundImage = "";
-      faces[flap.id].back.style.backgroundColor = "";
-    }
     return Promise.all([canvasUrl(frontSource, false), canvasUrl(backSource, true)]).then(([frontUrl, backUrl]) => {
       rig.style.setProperty("--paper-front", `url("${frontUrl}")`);
       rig.style.setProperty("--paper-back", `url("${backUrl}")`);
+      for (const flap of model.flaps) {
+        if (!faces[flap.id]) continue;
+        const { frontSkin, backSkin } = faces[flap.id];
+        frontSkin.dataset.textured = "1";
+        backSkin.dataset.textured = "1";
+        frontSkin.style.backgroundColor = "#fffdf8";
+        backSkin.style.backgroundColor = "#f6e2b0";
+        frontSkin.style.backgroundImage = `url("${frontUrl}")`;
+        backSkin.style.backgroundImage = `url("${backUrl}")`;
+      }
     });
   }
 

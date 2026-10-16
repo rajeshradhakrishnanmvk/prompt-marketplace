@@ -4,10 +4,10 @@
   "difficulty": 1,
   "note": "This tulip is the flat flower head, with no stem.",
   "camera": {
-    "rx": -48,
-    "ry": -14,
+    "rx": -12,
+    "ry": -8,
     "rz": 225,
-    "perspective": 1100
+    "perspective": 1600
   },
   "flaps": [
     {

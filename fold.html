@@ -31,7 +31,7 @@ body_class: studio
       <button type="button" class="swatch" data-swatch="9" aria-label="Purple" aria-pressed="false"></button>
       <button type="button" class="swatch" data-swatch="10" aria-label="Pink" aria-pressed="false"></button>
       <button type="button" class="swatch" data-swatch="11" aria-label="Brown" aria-pressed="false"></button>
-      <label class="tool-btn" style="padding:4px">Custom color
+      <label class="tool-btn">Custom
         <input id="custom-color" type="color" value="#d64532" aria-label="Custom color">
       </label>
     </div>
@@ -69,8 +69,8 @@ body_class: studio
     <h1 class="model-title" id="model-title">Paper Cup</h1>
     <p class="note" id="model-note" hidden></p>
     <div class="paper" id="paper" data-side="front">
-      <canvas id="front-canvas" class="is-active" width="1024" height="1024" aria-label="Front of the paper. Paint here."></canvas>
-      <canvas id="back-canvas" width="1024" height="1024" aria-label="Back of the paper. Paint here."></canvas>
+      <canvas id="front-canvas" class="is-active" width="1024" height="1024" tabindex="0" aria-label="Front of the paper. Paint here."></canvas>
+      <canvas id="back-canvas" width="1024" height="1024" tabindex="0" aria-label="Back of the paper. Paint here."></canvas>
       <svg id="creases" class="creases" aria-hidden="true"></svg>
     </div>
     <div id="fold-host" class="fold-host" hidden></div>

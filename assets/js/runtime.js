@@ -2,7 +2,7 @@
  * Timeline + flap world matrices. Pure: no DOM.
  * Angles are absolute degrees at the end of each move.
  * A move may set `from` and `to` (0–1 of the step) so one labelled
- * step can play two beats, such as the frog's zigzag spring.
+ * step can play two beats.
  */
 import { identity, multiply, hingeMatrix } from "./matrix.js";
 

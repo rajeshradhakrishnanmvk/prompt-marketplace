@@ -26,6 +26,17 @@ function pointAt(model, angles, id, uv) {
   return transformPoint(worlds[id], uv[0], uv[1], 0);
 }
 
+function pickOn(model, base, id, child, uv, target) {
+  let best = null;
+  for (const ang of [180, -180]) {
+    const p = pointAt(model, { ...base, [id]: ang }, child, uv);
+    const d = Math.hypot(p[0] - target[0], p[1] - target[1]);
+    if (!best || d < best.d) best = { ang, d, p };
+  }
+  if (best.d > 0.08) console.warn(id, "via", child, "flat miss", best.d.toFixed(3), best.p.map((n) => n.toFixed(2)));
+  return best.ang;
+}
+
 function pickFlat(model, base, id, uv, target) {
   let best = null;
   for (const ang of [180, -180]) {
@@ -65,9 +76,10 @@ function paperCup() {
   const right = [P(Q, 0), P(1, 0), P(IQ, Q)];
   const left = [P(0, Q), P(0, 1), P(Q, IQ)];
   const center = [P(Q, 0), P(IQ, Q), P(Q, IQ), P(0, Q)];
-  const backBody = [P(Q, 0), P(1, 0), P(0, 1), P(0, Q)];
   const flaps = [
-    flap("back-main", null, backBody, null),
+    flap("back-main", null, center, null),
+    flap("back-right", "back-main", right, hinge(P(Q, 0), P(IQ, Q))),
+    flap("back-left", "back-main", left, hinge(P(0, Q), P(Q, IQ))),
     flap("back-tip", "back-main", tip, hinge(P(Q, 0), P(0, Q))),
     flap("front-main", null, RP(center), hinge(P(1, 0), P(0, 1))),
     flap("front-right", "front-main", RP(right), hingeR(P(Q, 0), P(IQ, Q))),
@@ -76,16 +88,18 @@ function paperCup() {
   ];
   const model = { flaps, steps: [] };
   const base = { "front-main": 180 };
+  const backRight = pickFlat(model, {}, "back-right", P(1, 0), P(0, Q));
+  const backLeft = pickFlat(model, {}, "back-left", P(0, 1), P(Q, 0));
   const rightAng = pickFlat(model, base, "front-right", Rpt(P(1, 0)), P(0, Q));
   const leftAng = pickFlat(model, base, "front-left", Rpt(P(0, 1)), P(Q, 0));
   const tipAng = pickFlat(model, { ...base, "front-right": rightAng, "front-left": leftAng }, "front-tip", Rpt(P(0, 0)), P(Q, Q));
-  const backAng = pickZ(model, base, "back-tip", P(0, 0), +1);
+  const backAng = -180;
   return {
     id: "paper-cup",
     name: "Paper Cup",
     difficulty: 1,
     note: "",
-    camera: { rx: -56, ry: -26, rz: 45, perspective: 1100 },
+    camera: { rx: -68, ry: 24, rz: 45, perspective: 980 },
     flaps,
     creases: [
       [P(1, 0), P(0, 1), "valley"],
@@ -95,8 +109,22 @@ function paperCup() {
     ],
     steps: [
       { label: "Fold the square in half corner to corner to make a triangle.", dur: 1.5, moves: [{ flap: "front-main", angle: 180 }] },
-      { label: "Fold the right corner over to touch the left edge.", dur: 1.4, moves: [{ flap: "front-right", angle: rightAng }] },
-      { label: "Fold the left corner over to touch the right side.", dur: 1.4, moves: [{ flap: "front-left", angle: leftAng }] },
+      {
+        label: "Fold the right corner over to touch the left edge.",
+        dur: 1.4,
+        moves: [
+          { flap: "front-right", angle: rightAng },
+          { flap: "back-right", angle: backRight },
+        ],
+      },
+      {
+        label: "Fold the left corner over to touch the right side.",
+        dur: 1.4,
+        moves: [
+          { flap: "front-left", angle: leftAng },
+          { flap: "back-left", angle: backLeft },
+        ],
+      },
       { label: "Fold the front layer of the top point down into the pocket in front.", dur: 1.5, moves: [{ flap: "front-tip", angle: tipAng }] },
       {
         label: "Turn it over and fold the other top point down the other way.",
@@ -108,14 +136,14 @@ function paperCup() {
         label: "Gently squeeze the sides to open the cup.",
         dur: 1.7,
         flip: 0,
-        moves: [{ flap: "front-main", angle: 118 }],
+        moves: [{ flap: "front-main", angle: 132 }],
       },
     ],
   };
 }
 
 /** Point-down triangle models (camera rz 225): (0,0) is the bottom point. */
-function animalFlaps({ ears, brim, topFold }) {
+function animalFlaps({ ears, brim, topFold, tuck }) {
   const sideL = [P(0.5, 0), P(0.5, 0.5), P(0.75, 0.25)];
   const upL = [P(1, 0), P(0.5, 0), P(0.75, 0.25)];
   const hornL = [P(1, 0), P(0.78, 0), P(0.86, 0.14)];
@@ -124,28 +152,48 @@ function animalFlaps({ ears, brim, topFold }) {
   const upR = [P(0, 1), P(0, 0.5), P(0.25, 0.75)];
   const hornR = [P(0, 1), P(0, 0.78), P(0.14, 0.86)];
   const upRRest = [P(0, 0.78), P(0, 0.5), P(0.25, 0.75)];
-  const earL = [P(1, 0), P(0.72, 0), P(0.82, 0.18)];
-  const earLRest = [P(0.72, 0), P(0.5, 0), P(0.5, 0.5), P(0.82, 0.18)];
-  const earR = [P(0, 1), P(0, 0.72), P(0.18, 0.82)];
-  const earRRest = [P(0, 0.72), P(0, 0.5), P(0.5, 0.5), P(0.18, 0.82)];
+  // Side-flap point (1,0) reflects across this crease to about (0.82, 0.29),
+  // above the diamond (s≈1.11), so the ears stand up and out.
+  const earL = [P(1, 0), P(0.54, 0), P(0.66, 0.34)];
+  const earLRest = [P(0.54, 0), P(0.5, 0), P(0.5, 0.5), P(0.66, 0.34)];
+  const earR = [P(0, 1), P(0, 0.54), P(0.34, 0.66)];
+  const earRRest = [P(0, 0.54), P(0, 0.5), P(0.5, 0.5), P(0.34, 0.66)];
   const top = [P(0.5, 0.5), P(0.34, 0.5), P(0.5, 0.34)];
   const nose = [P(0.5, 0.5), P(0.43, 0.5), P(0.5, 0.43)];
   const topRest = [P(0.43, 0.5), P(0.34, 0.5), P(0.5, 0.34), P(0.5, 0.43)];
-  const brim2 = [P(0, 0), P(0.18, 0), P(0, 0.18)];
-  const brimRest = [P(0.18, 0), P(0.36, 0), P(0, 0.36), P(0, 0.18)];
+  // Brim creases are chosen so the tip first lands at s≈0.9, then the
+  // doubled edge lies on the horn-base line (0.50,0.28)–(0.36,0.36).
+  const brimTip = [P(0, 0), P(0.141, 0), P(0, 0.249)];
+  const brimBody = [P(0.141, 0), P(0.45, 0), P(0, 0.45), P(0, 0.249)];
 
   let center;
-  if (brim) center = [P(0.36, 0), P(0.5, 0), P(0.5, 0.5), P(0, 0.5), P(0, 0.36)];
+  if (brim) center = [P(0.45, 0), P(0.5, 0), P(0.5, 0.5), P(0, 0.5), P(0, 0.45)];
   else if (topFold) center = [P(0, 0), P(0.5, 0), P(0.5, 0.34), P(0.34, 0.5), P(0, 0.5)];
   else center = [P(0, 0), P(0.5, 0), P(0.5, 0.5), P(0, 0.5)];
 
-  const backMain = [P(0.42, 0), P(1, 0), P(0, 1), P(0, 0.42)];
-  const backTip = [P(0, 0), P(0.42, 0), P(0, 0.42)];
+  const backRight = [P(0.5, 0), P(1, 0), P(0.5, 0.5)];
+  const backLeft = [P(0, 0.5), P(0, 1), P(0.5, 0.5)];
+  let backMain;
+  let backTip;
+  let tuckPoly = null;
+  if (tuck) {
+    const B = 0.26;
+    const A = 0.55;
+    tuckPoly = [P(0, 0), P(B, 0), P(0, B)];
+    backTip = [P(B, 0), P(0.5, 0), P(0.5, A - 0.5), P(A - 0.5, 0.5), P(0, 0.5), P(0, B)];
+    backMain = [P(0.5, A - 0.5), P(0.5, 0.5), P(A - 0.5, 0.5)];
+  } else {
+    backTip = [P(0, 0), P(0.42, 0), P(0, 0.42)];
+    backMain = [P(0.42, 0), P(0.5, 0), P(0.5, 0.5), P(0, 0.5), P(0, 0.42)];
+  }
   const flaps = [
     flap("back-main", null, backMain, null),
-    flap("back-tip", "back-main", backTip, hinge(P(0.42, 0), P(0, 0.42))),
-    flap("front-main", null, RP(center), hinge(P(1, 0), P(0, 1))),
+    flap("back-right", "back-main", backRight, hinge(P(0.5, 0), P(0.5, 0.5))),
+    flap("back-left", "back-main", backLeft, hinge(P(0, 0.5), P(0.5, 0.5))),
+    flap("back-tip", "back-main", backTip, tuck ? hinge(P(0.5, 0.05), P(0.05, 0.5)) : hinge(P(0.42, 0), P(0, 0.42))),
   ];
+  if (tuckPoly) flaps.push(flap("tuck", "back-tip", tuckPoly, hinge(P(0.26, 0), P(0, 0.26))));
+  flaps.push(flap("front-main", null, RP(center), hinge(P(1, 0), P(0, 1))));
   if (ears === "horns") {
     const upLBody = [P(0.78, 0), P(0.5, 0), P(0.75, 0.25), P(0.86, 0.14)];
     const upRBody = [P(0, 0.78), P(0, 0.5), P(0.25, 0.75), P(0.14, 0.86)];
@@ -160,9 +208,9 @@ function animalFlaps({ ears, brim, topFold }) {
   } else if (ears === "cat") {
     flaps.push(
       flap("side-l", "front-main", RP(earLRest), hingeR(P(0.5, 0), P(0.5, 0.5))),
-      flap("ear-l", "side-l", RP(earL), hingeR(P(0.72, 0), P(0.82, 0.18))),
+      flap("ear-l", "side-l", RP(earL), hingeR(P(0.54, 0), P(0.66, 0.34))),
       flap("side-r", "front-main", RP(earRRest), hingeR(P(0, 0.5), P(0.5, 0.5))),
-      flap("ear-r", "side-r", RP(earR), hingeR(P(0, 0.72), P(0.18, 0.82)))
+      flap("ear-r", "side-r", RP(earR), hingeR(P(0, 0.54), P(0.34, 0.66)))
     );
   }
   if (topFold) {
@@ -170,32 +218,31 @@ function animalFlaps({ ears, brim, topFold }) {
     flaps.push(flap("nose", "top", RP(nose), hingeR(P(0.43, 0.5), P(0.5, 0.43))));
   }
   if (brim) {
-    flaps.push(flap("brim", "front-main", RP(brimRest), hingeR(P(0.36, 0), P(0, 0.36))));
-    flaps.push(flap("brim-tip", "brim", RP(brim2), hingeR(P(0.18, 0), P(0, 0.18))));
+    flaps.push(flap("brim", "front-main", RP(brimBody), hingeR(P(0.45, 0), P(0, 0.45))));
+    flaps.push(flap("brim-tip", "brim", RP(brimTip), hingeR(P(0.141, 0), P(0, 0.249))));
   }
   return flaps;
 }
 
 function cat() {
-  const flaps = animalFlaps({ ears: "cat", topFold: true });
+  const flaps = animalFlaps({ ears: "cat", topFold: true, tuck: true });
   const model = { flaps, steps: [] };
   const base = { "front-main": 180 };
   const leftAng = pickFlat(model, base, "side-l", Rpt(P(1, 0)), P(0, 0));
   const rightAng = pickFlat(model, base, "side-r", Rpt(P(0, 1)), P(0, 0));
-  const backAng = pickZ(model, {}, "back-tip", P(0, 0), +1);
   return {
     id: "cat-face",
     name: "Cat Face",
     difficulty: 1,
     note: "",
-    camera: { rx: -52, ry: -18, rz: 225, perspective: 1100 },
+    camera: { rx: -8, ry: -6, rz: 225, perspective: 1600 },
     flaps,
     creases: [
       [P(1, 0), P(0, 1), "valley"],
       [P(0.5, 0), P(0.5, 0.5), "valley"],
       [P(0, 0.5), P(0.5, 0.5), "valley"],
-      [P(0.72, 0), P(0.82, 0.18), "mountain"],
-      [P(0, 0.72), P(0.18, 0.82), "mountain"],
+      [P(0.54, 0), P(0.66, 0.34), "mountain"],
+      [P(0, 0.54), P(0.34, 0.66), "mountain"],
       [P(0.34, 0.5), P(0.5, 0.34), "valley"],
       [P(0.42, 0), P(0, 0.42), "mountain"],
     ],
@@ -207,150 +254,76 @@ function cat() {
         moves: [
           { flap: "side-l", angle: leftAng },
           { flap: "side-r", angle: rightAng },
+          { flap: "back-right", angle: 180 },
+          { flap: "back-left", angle: 180 },
         ],
       },
       {
         label: "Fold the two top flaps up and out to make the ears.",
         dur: 1.2,
         moves: [
-          { flap: "ear-l", angle: -125 },
-          { flap: "ear-r", angle: 125 },
+          { flap: "ear-l", angle: 180 },
+          { flap: "ear-r", angle: -180 },
         ],
       },
-      { label: "Fold the top corner down.", dur: 1.05, moves: [{ flap: "top", angle: 175 }] },
+      { label: "Fold the top corner down.", dur: 1.05, moves: [{ flap: "top", angle: 180 }] },
       {
         label: "Turn it over and fold the bottom layer up.",
         dur: 1.05,
         flip: 180,
-        moves: [{ flap: "back-tip", angle: backAng }],
+        moves: [{ flap: "back-tip", angle: 180 }],
       },
       {
         label: "Fold the tip of the top layer down to make the nose.",
         dur: 1.05,
         flip: 0,
-        moves: [{ flap: "nose", angle: 70 }],
+        moves: [{ flap: "nose", angle: 180 }],
       },
-      { label: "Tuck the bottom corner inside the model.", dur: 1.1, moves: [{ flap: "back-tip", angle: backAng > 0 ? 70 : -70 }] },
+      { label: "Tuck the bottom corner inside the model.", dur: 1.1, moves: [{ flap: "tuck", angle: -180 }] },
       { label: "Draw on the eyes and whiskers.", dur: 1.25, moves: [] },
     ],
   };
 }
 
-function helmet() {
-  const flaps = animalFlaps({ ears: "horns", brim: true });
-  const model = { flaps, steps: [] };
-  const base = { "front-main": 180 };
-  const leftAng = pickFlat(model, base, "side-l", Rpt(P(1, 0)), P(0, 0));
-  const rightAng = pickFlat(model, base, "side-r", Rpt(P(0, 1)), P(0, 0));
-  const upL = pickFlat(model, { ...base, "side-l": leftAng }, "up-l", Rpt(P(1, 0)), P(0.5, 0.5));
-  const upR = pickFlat(model, { ...base, "side-r": rightAng }, "up-r", Rpt(P(0, 1)), P(0.5, 0.5));
-  const backAng = pickZ(model, {}, "back-tip", P(0, 0), +1);
-  const brimFlat = pickFlat(model, base, "brim", Rpt(P(0, 0)), P(0.36, 0.36));
-  return {
-    id: "samurai-helmet",
-    name: "Samurai Helmet (kabuto)",
-    difficulty: 2,
-    note: "",
-    camera: { rx: -50, ry: -22, rz: 225, perspective: 1100 },
-    flaps,
-    creases: [
-      [P(1, 0), P(0, 1), "valley"],
-      [P(0.5, 0), P(0.75, 0.25), "valley"],
-      [P(0, 0.5), P(0.25, 0.75), "valley"],
-      [P(0.78, 0), P(0.86, 0.14), "mountain"],
-      [P(0, 0.78), P(0.14, 0.86), "mountain"],
-      [P(0.36, 0), P(0, 0.36), "valley"],
-      [P(0.18, 0), P(0, 0.18), "valley"],
-      [P(0.42, 0), P(0, 0.42), "mountain"],
-    ],
-    steps: [
-      { label: "Fold the square in half corner to corner to make a triangle, with the point facing down.", dur: 1.2, moves: [{ flap: "front-main", angle: 180 }] },
-      {
-        label: "Fold the left and right corners down to the bottom point to make a diamond.",
-        dur: 1.2,
-        moves: [
-          { flap: "side-l", angle: leftAng },
-          { flap: "side-r", angle: rightAng },
-        ],
-      },
-      {
-        label: "Fold both top-layer flaps up to the top point.",
-        dur: 1.25,
-        moves: [
-          { flap: "up-l", angle: upL },
-          { flap: "up-r", angle: upR },
-        ],
-      },
-      {
-        label: "Fold the tips of those two flaps outward to make the horns.",
-        dur: 1.3,
-        moves: [
-          { flap: "horn-l", angle: -95 },
-          { flap: "horn-r", angle: 95 },
-        ],
-      },
-      {
-        label: "Fold the front layer of the bottom point up most of the way, then fold it up again along the bottom of the horns.",
-        dur: 1.5,
-        moves: [
-          { flap: "brim", angle: Math.sign(brimFlat) * 105, from: 0, to: 0.48 },
-          { flap: "brim", angle: brimFlat, from: 0.52, to: 1 },
-          { flap: "brim-tip", angle: Math.sign(brimFlat) * 155, from: 0.52, to: 1 },
-        ],
-      },
-      { label: "Fold the back bottom flap up behind the hat.", dur: 1.15, moves: [{ flap: "back-tip", angle: backAng }] },
-      {
-        label: "Open the bottom to make room for a head.",
-        dur: 1.4,
-        moves: [
-          { flap: "front-main", angle: 148 },
-          { flap: "side-l", angle: leftAng > 0 ? leftAng - 28 : leftAng + 28 },
-          { flap: "side-r", angle: rightAng > 0 ? rightAng - 28 : rightAng + 28 },
-        ],
-      },
-    ],
-  };
-}
-
 function dog() {
-  const earL = [P(1, 0), P(0.689, 0), P(0.511, 0.489)];
-  const faceL = [P(0, 0), P(0.689, 0), P(0.511, 0.489), P(0.5, 0.5)];
+  // Side corners fold down the cheeks. (1,0) reflects to about (0.30, 0.20).
+  const earL = [P(1, 0), P(0.62, 0), P(0.72, 0.28)];
   const nose = [P(0, 0), P(0.16, 0), P(0.08, 0.08)];
-  const faceLRest = [P(0.16, 0), P(0.689, 0), P(0.511, 0.489), P(0.5, 0.5), P(0.08, 0.08)];
-  const earR = [P(0, 1), P(0, 0.689), P(0.489, 0.511)];
-  const faceR = [P(0, 0), P(0, 0.689), P(0.489, 0.511), P(0.5, 0.5)];
-  const backTop = [P(0.62, 0), P(1, 0), P(0, 1), P(0, 0.62)];
-  const backRest = [P(0, 0), P(0.62, 0), P(0, 0.62)];
+  const faceLRest = [P(0.16, 0), P(0.62, 0), P(0.72, 0.28), P(0.5, 0.5), P(0.08, 0.08)];
+  const earR = [P(0, 1), P(0, 0.62), P(0.28, 0.72)];
+  const faceR = [P(0, 0), P(0, 0.62), P(0.28, 0.72), P(0.5, 0.5)];
+  const backTop = [P(0.92, 0), P(1, 0), P(0, 1), P(0, 0.92)];
+  const backRest = [P(0, 0), P(0.92, 0), P(0, 0.92)];
   const flaps = [
     flap("back-main", null, backRest, null),
-    flap("back-top", "back-main", backTop, hinge(P(0.62, 0), P(0, 0.62))),
+    flap("back-top", "back-main", backTop, hinge(P(0.92, 0), P(0, 0.92))),
     anchor("front", null, hinge(P(1, 0), P(0, 1))),
     flap("face-l", "front", RP(faceLRest), null),
     flap("nose", "face-l", RP(nose), hingeR(P(0.16, 0), P(0.08, 0.08))),
-    flap("ear-l", "face-l", RP(earL), hingeR(P(0.689, 0), P(0.511, 0.489))),
+    flap("ear-l", "face-l", RP(earL), hingeR(P(0.62, 0), P(0.72, 0.28))),
     flap("face-r", "front", RP(faceR), hingeR(P(0, 0), P(0.5, 0.5))),
-    flap("ear-r", "face-r", RP(earR), hingeR(P(0, 0.689), P(0.489, 0.511))),
+    flap("ear-r", "face-r", RP(earR), hingeR(P(0, 0.62), P(0.28, 0.72))),
   ];
   const model = { flaps, steps: [] };
   const base = { front: 180 };
   const half = pickFlat(model, base, "face-r", Rpt(P(0, 0.8)), P(0.8, 0));
-  const earLA = pickFlat(model, base, "ear-l", Rpt(P(1, 0)), P(0.45, -0.2));
-  const earRA = pickFlat(model, base, "ear-r", Rpt(P(0, 1)), P(-0.2, 0.45));
-  const backAng = pickZ(model, {}, "back-top", P(0.9, 0.1), +1);
+  const earLA = pickFlat(model, base, "ear-l", Rpt(P(1, 0)), P(0.3, 0.2));
+  const earRA = pickFlat(model, base, "ear-r", Rpt(P(0, 1)), P(0.2, 0.3));
+  const backAng = 180;
   return {
     id: "dog-face",
     name: "Dog Face",
     difficulty: 1,
     note: "",
-    camera: { rx: -50, ry: 16, rz: 225, perspective: 1100 },
+    camera: { rx: -10, ry: 8, rz: 225, perspective: 1600 },
     flaps,
     creases: [
       [P(1, 0), P(0, 1), "valley"],
       [P(0, 0), P(0.5, 0.5), "valley"],
-      [P(0.689, 0), P(0.511, 0.489), "valley"],
-      [P(0, 0.689), P(0.489, 0.511), "valley"],
+      [P(0.62, 0), P(0.72, 0.28), "valley"],
+      [P(0, 0.62), P(0.28, 0.72), "valley"],
       [P(0.16, 0), P(0.08, 0.08), "mountain"],
-      [P(0.62, 0), P(0, 0.62), "mountain"],
+      [P(0.92, 0), P(0, 0.92), "mountain"],
     ],
     steps: [
       {
@@ -403,7 +376,7 @@ function tulip() {
     name: "Tulip",
     difficulty: 1,
     note: "This tulip is the flat flower head, with no stem.",
-    camera: { rx: -48, ry: -14, rz: 225, perspective: 1100 },
+    camera: { rx: -12, ry: -8, rz: 225, perspective: 1600 },
     flaps,
     creases: [
       [P(1, 0), P(0, 1), "valley"],
@@ -437,139 +410,7 @@ function tulip() {
   };
 }
 
-function frog() {
-  const flaps = [
-    flap("scrap-l", null, [P(0, 0), P(0.25, 0), P(0.25, 1), P(0, 1)], hinge(P(0.25, 0), P(0.25, 1))),
-    flap("scrap-r", null, [P(0.75, 0), P(1, 0), P(1, 1), P(0.75, 1)], hinge(P(0.75, 0), P(0.75, 1))),
-    flap("top-l", null, [P(0.25, 0), P(0.25, 0.25), P(0.5, 0.25)], hinge(P(0.25, 0.25), P(0.5, 0.25))),
-    flap("diag-l", "top-l", [P(0.25, 0), P(0.5, 0), P(0.5, 0.25)], hinge(P(0.25, 0), P(0.5, 0.25))),
-    flap("top-r", null, [P(0.75, 0), P(0.75, 0.25), P(0.5, 0.25)], hinge(P(0.5, 0.25), P(0.75, 0.25))),
-    flap("diag-r", "top-r", [P(0.75, 0), P(0.5, 0), P(0.5, 0.25)], hinge(P(0.75, 0), P(0.5, 0.25))),
-    flap("chest", null, [P(0.25, 0.25), P(0.75, 0.25), P(0.75, 0.5), P(0.25, 0.5)], null),
-    anchor("spring", null, hinge(P(0.25, 0.5), P(0.75, 0.5))),
-    flap("belly", "spring", [P(0.375, 0.5), P(0.625, 0.5), P(0.625, 0.75), P(0.375, 0.75)], null),
-    flap("hip-l", "spring", [P(0.25, 0.5), P(0.375, 0.5), P(0.375, 0.75), P(0.25, 0.75)], hinge(P(0.375, 0.5), P(0.375, 0.75))),
-    flap("hip-r", "spring", [P(0.625, 0.5), P(0.75, 0.5), P(0.75, 0.75), P(0.625, 0.75)], hinge(P(0.625, 0.5), P(0.625, 0.75))),
-    anchor("lower", "spring", hinge(P(0.25, 0.75), P(0.75, 0.75))),
-    flap("lower-mid", "lower", [P(0.375, 0.75), P(0.625, 0.75), P(0.625, 1), P(0.375, 1)], null),
-    flap("side-l", "lower", [P(0.25, 0.75), P(0.375, 0.75), P(0.375, 0.86), P(0.25, 0.86)], hinge(P(0.375, 0.75), P(0.375, 1))),
-    flap("leg-l", "side-l", [P(0.25, 0.86), P(0.375, 0.86), P(0.375, 1), P(0.25, 1)], hinge(P(0.25, 0.86), P(0.375, 0.86))),
-    flap("side-r", "lower", [P(0.625, 0.75), P(0.75, 0.75), P(0.75, 0.86), P(0.625, 0.86)], hinge(P(0.625, 0.75), P(0.625, 1))),
-    flap("leg-r", "side-r", [P(0.625, 0.86), P(0.75, 0.86), P(0.75, 1), P(0.625, 1)], hinge(P(0.625, 0.86), P(0.75, 0.86))),
-  ];
-  const model = { flaps, steps: [] };
-  const scrapL = pickZ(model, {}, "scrap-l", P(0, 0.5), +1);
-  const scrapR = pickZ(model, {}, "scrap-r", P(1, 0.5), +1);
-  return {
-    id: "jumping-frog-lite",
-    name: "Jumping Frog Lite",
-    difficulty: 3,
-    note: "Paint the middle of the square. With real paper, use scissors to cut it in half.",
-    camera: { rx: -48, ry: -32, rz: 0, perspective: 1100 },
-    flaps,
-    creases: [
-      [P(0.25, 0), P(0.25, 1), "valley"],
-      [P(0.75, 0), P(0.75, 1), "valley"],
-      [P(0.25, 0), P(0.5, 0.25), "valley"],
-      [P(0.75, 0), P(0.5, 0.25), "valley"],
-      [P(0.25, 0.25), P(0.75, 0.25), "mountain"],
-      [P(0.375, 0.5), P(0.375, 1), "valley"],
-      [P(0.625, 0.5), P(0.625, 1), "valley"],
-      [P(0.25, 0.5), P(0.75, 0.5), "valley"],
-      [P(0.25, 0.75), P(0.75, 0.75), "mountain"],
-      [P(0.25, 0.86), P(0.375, 0.86), "valley"],
-      [P(0.625, 0.86), P(0.75, 0.86), "valley"],
-    ],
-    steps: [
-      {
-        label: "Fold the square in half and cut along the fold. You'll use one rectangle, held tall.",
-        dur: 0.85,
-        moves: [
-          { flap: "scrap-l", angle: scrapL },
-          { flap: "scrap-r", angle: scrapR },
-        ],
-      },
-      {
-        label: "Fold the top edge across to each side edge to make two diagonal creases, then unfold.",
-        dur: 0.95,
-        moves: [
-          { flap: "diag-l", angle: 165, from: 0, to: 0.28 },
-          { flap: "diag-l", angle: 0, from: 0.28, to: 0.5 },
-          { flap: "diag-r", angle: -165, from: 0.5, to: 0.75 },
-          { flap: "diag-r", angle: 0, from: 0.75, to: 1 },
-        ],
-      },
-      {
-        label: "Turn it over. Fold the top edge down across where the diagonals cross, then unfold.",
-        dur: 0.95,
-        flip: 180,
-        moves: [
-          { flap: "top-l", angle: 175, from: 0, to: 0.35 },
-          { flap: "top-r", angle: -175, from: 0, to: 0.35 },
-          { flap: "top-l", angle: 0, from: 0.55, to: 1 },
-          { flap: "top-r", angle: 0, from: 0.55, to: 1 },
-        ],
-      },
-      {
-        label: "Turn it back over. Push the sides in and fold the top down so you get a triangle on top of a rectangle.",
-        dur: 1.15,
-        flip: 0,
-        moves: [
-          { flap: "top-l", angle: 178 },
-          { flap: "top-r", angle: -178 },
-          { flap: "diag-l", angle: 155 },
-          { flap: "diag-r", angle: -155 },
-        ],
-      },
-      {
-        label: "Fold the triangle's two flaps up to make the front legs.",
-        dur: 0.9,
-        moves: [
-          { flap: "diag-l", angle: 55 },
-          { flap: "diag-r", angle: -55 },
-        ],
-      },
-      {
-        label: "Fold the sides of the rectangle in to the middle line.",
-        dur: 0.9,
-        moves: [
-          { flap: "hip-l", angle: 178 },
-          { flap: "hip-r", angle: -178 },
-          { flap: "side-l", angle: 178 },
-          { flap: "side-r", angle: -178 },
-        ],
-      },
-      { label: "Fold the bottom edge up to the bottom of the triangle.", dur: 0.85, moves: [{ flap: "lower", angle: -175 }] },
-      {
-        label: "Fold the bottom corners out to make the back legs.",
-        dur: 0.85,
-        moves: [
-          { flap: "leg-l", angle: -70 },
-          { flap: "leg-r", angle: 70 },
-        ],
-      },
-      {
-        label: "Fold the bottom half up, then fold it back down in half to make a zigzag spring.",
-        dur: 1.15,
-        moves: [
-          { flap: "spring", angle: -158, from: 0, to: 0.48 },
-          { flap: "lower", angle: 55, from: 0.52, to: 1 },
-        ],
-      },
-      {
-        label: "Turn it over. Press the back and let go to jump!",
-        dur: 0.95,
-        flip: 180,
-        moves: [
-          { flap: "lower", angle: 110, from: 0, to: 0.42 },
-          { flap: "lower", angle: 55, from: 0.58, to: 1 },
-        ],
-      },
-    ],
-  };
-}
-
-const builders = [paperCup, cat, helmet, dog, tulip, frog];
+const builders = [paperCup, cat, dog, tulip];
 mkdirSync("_data/models", { recursive: true });
 for (const build of builders) {
   const m = build();
@@ -582,7 +423,8 @@ for (const build of builders) {
     if (f.poly && f.poly.length >= 3) cover += area(f.poly);
     else if (f.poly && f.poly.length > 0 && f.poly.length < 3) console.warn(m.id, f.id, "short poly");
   }
-  if (Math.abs(cover - 1) > 0.04) console.warn(m.id, "coverage", cover.toFixed(3));
+  const expect = 1;
+  if (Math.abs(cover - expect) > 0.04) console.warn(m.id, "coverage", cover.toFixed(3), "expected", expect);
   writeFileSync(`_data/models/${m.id}.json`, `${JSON.stringify(m, null, 2)}\n`);
   console.log(m.id, m.steps.length, "steps", dur.toFixed(2), "s", m.flaps.length, "flaps", "cover", cover.toFixed(3));
 }
