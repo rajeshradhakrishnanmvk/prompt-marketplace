@@ -154,19 +154,29 @@ function routeFromLocation() {
 }
 
 let shareSimplified = false;
+let shareTooDetailed = false;
 
 async function ensureToken() {
+  shareTooDetailed = false;
   if (raster) {
-    shareSimplified = false;
+    shareSimplified = raster.token[0] === "j" || raster.token[0] === "p";
     return raster.token;
   }
   const strokes = paint.getStrokes();
   const packed = await encodePayload(strokes, () => rasterToken(frontCanvas, backCanvas));
+  if (packed.tooDetailed || !packed.token) {
+    shareTooDetailed = true;
+    shareSimplified = false;
+    return null;
+  }
   shareSimplified = Boolean(packed.simplified);
   return packed.token;
 }
 
 function shareMessage(copied) {
+  if (shareTooDetailed) {
+    return "This painting is too detailed to share as a link. Download a picture or a video instead.";
+  }
   if (shareSimplified) {
     return copied
       ? "Link copied. The shared copy is simplified so the link stays short."
@@ -356,6 +366,11 @@ document.getElementById("share-btn").addEventListener("click", async () => {
   shareDialog.showModal();
   try {
     const token = await ensureToken();
+    if (!token) {
+      shareUrl.value = "";
+      setStatus(shareMessage(false));
+      return;
+    }
     writeHash(true, token);
     shareUrl.value = location.href;
     if (shareSimplified) setStatus(shareMessage(false));
@@ -368,6 +383,11 @@ document.getElementById("share-btn").addEventListener("click", async () => {
 document.getElementById("copy-link").addEventListener("click", async () => {
   try {
     const token = await ensureToken();
+    if (!token) {
+      shareUrl.value = "";
+      setStatus(shareMessage(false));
+      return;
+    }
     writeHash(true, token);
     shareUrl.value = location.href;
     await navigator.clipboard.writeText(shareUrl.value);
@@ -428,6 +448,11 @@ if (navigator.share) nativeBtn.hidden = false;
 nativeBtn.addEventListener("click", async () => {
   try {
     const token = await ensureToken();
+    if (!token) {
+      shareUrl.value = "";
+      setStatus(shareMessage(false));
+      return;
+    }
     writeHash(true, token);
     shareUrl.value = location.href;
     if (shareSimplified) setStatus(shareMessage(false));

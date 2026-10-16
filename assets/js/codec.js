@@ -242,9 +242,10 @@ export async function encodePayload(strokes, rasterFallback) {
   }
   if (token.length > 1800 && typeof rasterFallback === "function") {
     const raster = await rasterFallback();
-    if (raster) return { token: raster, simplified: raster.length > 1800 };
+    if (raster && raster.length <= 1800) return { token: raster, simplified: true };
+    return { token: null, simplified: false, tooDetailed: true };
   }
-  return { token, simplified: false };
+  return { token, simplified: false, tooDetailed: false };
 }
 
 export async function decodePayload(token) {
@@ -256,32 +257,26 @@ export async function decodePayload(token) {
 }
 
 /**
- * Raster fallback when a long painting will not fit in the stroke token.
- * One JPEG holds the front square over the back square, stepped down in
- * size and quality until the token is about 1,800 characters.
+ * Raster fallback when the stroke token is longer than about 1,800 characters.
+ * One JPEG holds the front square over the back square.
+ * 640px at quality 0.92 is the floor: a dense 40-stroke painting stays at
+ * about 25.4 dB there. Smaller or softer JPEGs smear, so they are not tried.
+ * Returns null when that floor does not fit in the character budget.
  */
 export function rasterToken(frontCanvas, backCanvas) {
-  const pack = (size, quality) => {
-    const c = document.createElement("canvas");
-    c.width = size;
-    c.height = size * 2;
-    const g = c.getContext("2d");
-    g.fillStyle = "#fffdf8";
-    g.fillRect(0, 0, size, size * 2);
-    g.drawImage(frontCanvas, 0, 0, size, size);
-    g.drawImage(backCanvas, 0, size, size, size);
-    const url = c.toDataURL("image/jpeg", quality);
-    return `j${url.slice(url.indexOf(",") + 1).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
-  };
-  let best = null;
-  for (const size of [128, 96, 72, 56, 40, 28, 20]) {
-    for (const quality of [0.55, 0.36, 0.22, 0.12]) {
-      const token = pack(size, quality);
-      if (!best || token.length < best.length) best = token;
-      if (token.length <= 1800) return token;
-    }
-  }
-  return best;
+  const size = 640;
+  const quality = 0.92;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size * 2;
+  const g = c.getContext("2d");
+  g.fillStyle = "#fffdf8";
+  g.fillRect(0, 0, size, size * 2);
+  g.drawImage(frontCanvas, 0, 0, size, size);
+  g.drawImage(backCanvas, 0, size, size, size);
+  const url = c.toDataURL("image/jpeg", quality);
+  const token = `j${url.slice(url.indexOf(",") + 1).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
+  return token.length <= 1800 ? token : null;
 }
 
 export function rasterCanvases(token) {
