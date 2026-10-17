@@ -29,7 +29,8 @@ layout: default
       <dd>
         {% if fact.lightday %}
         <span data-lightday>
-          <span data-before>{{ fact.before }}</span>
+          <span data-static>{{ fact.text }}</span>
+          <span data-before hidden>{{ fact.before }}</span>
           <span data-after hidden>{{ fact.after }}</span>
         </span>
         {% else %}
@@ -79,16 +80,8 @@ layout: default
   </aside>
 
   <p class="cta-row no-print"><a class="btn primary xl" href="{{ site.baseurl }}/fold/#m={{ page.model_id }}">Paint yours online</a></p>
-  {% if page.kit_url %}
-  <p class="cta-row no-print"><a class="btn" href="{{ site.baseurl }}{{ page.kit_url }}">Print the paper kit</a></p>
-  {% endif %}
 
-  {% if model.type == "assembly" %}
-  <section class="print-only">
-    <h2>Printable kit</h2>
-    <p>The four nets are on the kit page. Print that page at 100% scale. It fits A4 and US Letter.</p>
-  </section>
-  {% elsif model.sheet %}
+  {% if model.sheet %}
   <section class="print-only crease-wrap is-net">
     <h2>Printable net</h2>
     <svg viewBox="{% if model.print_view %}{{ model.print_view | join: ' ' }}{% else %}0 0 100 100{% endif %}" role="img" aria-label="Net to cut out and glue">

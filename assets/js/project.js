@@ -316,7 +316,16 @@ function buildAssembly(model, prep, angles, camera, size) {
         const p1 = cam[i];
         const p2 = cam[i + 1];
         const facing = (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y);
-        tris.push({ flapId: flap.id, partId: part.id, p0, p1, p2, facing, z: (p0.z + p1.z + p2.z) / 3 });
+        tris.push({
+          flapId: flap.id,
+          partId: part.id,
+          p0,
+          p1,
+          p2,
+          facing,
+          z: (p0.z + p1.z + p2.z) / 3,
+          boundary: [i === 1, true, i + 1 === cam.length - 1],
+        });
       }
     }
   }
@@ -325,59 +334,91 @@ function buildAssembly(model, prep, angles, camera, size) {
   return { tris, polys };
 }
 
+function midpoint(a, b) {
+  return {
+    u: (a.u + b.u) / 2,
+    v: (a.v + b.v) / 2,
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+    z: (a.z + b.z) / 2,
+  };
+}
+
+/** Split a large face so painter's order follows the surface, not one face centre. */
+function splitPainterTri(tri, depth, minEdge) {
+  const e01 = Math.hypot(tri.p1.x - tri.p0.x, tri.p1.y - tri.p0.y);
+  const e12 = Math.hypot(tri.p2.x - tri.p1.x, tri.p2.y - tri.p1.y);
+  const e20 = Math.hypot(tri.p0.x - tri.p2.x, tri.p0.y - tri.p2.y);
+  if (depth <= 0 || Math.max(e01, e12, e20) < minEdge) return [tri];
+  const m01 = midpoint(tri.p0, tri.p1);
+  const m12 = midpoint(tri.p1, tri.p2);
+  const m20 = midpoint(tri.p2, tri.p0);
+  const zOf = (a, b, c) => (a.z + b.z + c.z) / 3;
+  const kids = [
+    { ...tri, p0: tri.p0, p1: m01, p2: m20, boundary: [tri.boundary[0], false, tri.boundary[2]], z: zOf(tri.p0, m01, m20) },
+    { ...tri, p0: m01, p1: tri.p1, p2: m12, boundary: [tri.boundary[0], tri.boundary[1], false], z: zOf(m01, tri.p1, m12) },
+    { ...tri, p0: m20, p1: m12, p2: tri.p2, boundary: [false, tri.boundary[1], tri.boundary[2]], z: zOf(m20, m12, tri.p2) },
+    { ...tri, p0: m01, p1: m12, p2: m20, boundary: [false, false, false], z: zOf(m01, m12, m20) },
+  ];
+  return kids.flatMap((kid) => splitPainterTri(kid, depth - 1, minEdge));
+}
+
+function growFromCenter(p, cx, cy, px) {
+  const dx = p.x - cx;
+  const dy = p.y - cy;
+  const len = Math.hypot(dx, dy) || 1;
+  return { ...p, x: p.x + (dx / len) * px, y: p.y + (dy / len) * px };
+}
+
 function paintAssembly(ctx, model, prep, angles, camera, front, back, size, fit, textures) {
   const built = buildAssembly(model, prep, angles, camera, size);
-  const faces = built.polys.map((poly) => ({ ...poly, pts: poly.pts.map((p) => movePoint(p, fit)) }));
-  const tris = built.tris.map((tri) => ({
+  const moved = built.tris.map((tri) => ({
     ...tri,
+    boundary: tri.boundary || [true, true, true],
     p0: movePoint(tri.p0, fit),
     p1: movePoint(tri.p1, fit),
     p2: movePoint(tri.p2, fit),
   }));
-  const byFlap = new Map();
-  for (const tri of tris) {
-    const key = `${tri.partId}:${tri.flapId}`;
-    if (!byFlap.has(key)) byFlap.set(key, []);
-    byFlap.get(key).push(tri);
-  }
+  const pieces = moved.flatMap((tri) => splitPainterTri(tri, 3, Math.max(28, size * 0.055)));
+  pieces.sort((a, b) => a.z - b.z);
   const pair = (partId) => {
     if (textures && textures[partId]) return textures[partId];
     return { front, back };
   };
   ctx.save();
   ctx.lineJoin = "round";
-  for (const face of faces) {
-    const images = pair(face.partId);
-    const faceTris = byFlap.get(`${face.partId}:${face.flapId}`) || [];
-    for (const tri of faceTris) {
-      const image = tri.facing >= 0 ? images.front : images.back;
-      const w = image.width || 1024;
-      const h = image.height || 1024;
-      const uv = (p) => ({ x: (tri.facing >= 0 ? p.u : 1 - p.u) * w, y: p.v * h });
-      drawTexturedTriangle(ctx, image, uv(tri.p0), uv(tri.p1), uv(tri.p2), tri.p0, tri.p1, tri.p2);
-    }
-    if (faceTris.length > 1) {
-      const seam = Math.max(1.5, size / 200);
-      for (const tri of faceTris) {
-        const image = tri.facing >= 0 ? images.front : images.back;
-        const color = solidSeamColor(image, tri);
-        if (!color) continue;
-        ctx.beginPath();
-        ctx.moveTo(tri.p0.x, tri.p0.y);
-        ctx.lineTo(tri.p2.x, tri.p2.y);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = seam;
-        ctx.lineCap = "round";
-        ctx.stroke();
-      }
-    }
-    if (face.pts.length < 2) continue;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(28, 24, 18, 0.45)";
+  ctx.lineWidth = Math.max(1, size / 280);
+  const bleed = 0.7;
+  for (const tri of pieces) {
+    const images = pair(tri.partId);
+    const image = tri.facing >= 0 ? images.front : images.back;
+    const w = image.width || 1024;
+    const h = image.height || 1024;
+    const uv = (p) => ({ x: (tri.facing >= 0 ? p.u : 1 - p.u) * w, y: p.v * h });
+    const cx = (tri.p0.x + tri.p1.x + tri.p2.x) / 3;
+    const cy = (tri.p0.y + tri.p1.y + tri.p2.y) / 3;
+    drawTexturedTriangle(
+      ctx,
+      image,
+      uv(tri.p0),
+      uv(tri.p1),
+      uv(tri.p2),
+      growFromCenter(tri.p0, cx, cy, bleed),
+      growFromCenter(tri.p1, cx, cy, bleed),
+      growFromCenter(tri.p2, cx, cy, bleed)
+    );
+    const edges = [[tri.p0, tri.p1], [tri.p1, tri.p2], [tri.p2, tri.p0]];
     ctx.beginPath();
-    face.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-    ctx.closePath();
-    ctx.strokeStyle = "rgba(28, 24, 18, 0.45)";
-    ctx.lineWidth = Math.max(1, size / 280);
-    ctx.stroke();
+    let drew = false;
+    tri.boundary.forEach((on, index) => {
+      if (!on) return;
+      ctx.moveTo(edges[index][0].x, edges[index][0].y);
+      ctx.lineTo(edges[index][1].x, edges[index][1].y);
+      drew = true;
+    });
+    if (drew) ctx.stroke();
   }
   ctx.restore();
 }

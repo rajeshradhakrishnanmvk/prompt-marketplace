@@ -257,6 +257,10 @@ export function serializeAssembly(entries) {
   for (const [id, strokes] of entries) {
     const idBytes = new TextEncoder().encode(id);
     const body = serialize(strokes);
+    if (body.length > 65535) {
+      const err = new Error("sheet-too-long");
+      throw err;
+    }
     const head = new Uint8Array(1 + idBytes.length + 2);
     head[0] = idBytes.length;
     head.set(idBytes, 1);
@@ -292,7 +296,13 @@ export function deserializeAssembly(bytes) {
 }
 
 export async function encodeAssemblyPayload(entries) {
-  const raw = serializeAssembly(entries);
+  let raw;
+  try {
+    raw = serializeAssembly(entries);
+  } catch (err) {
+    if (err && err.message === "sheet-too-long") return { token: null, tooDetailed: true, length: SHARE_LIMIT + 1 };
+    throw err;
+  }
   let token = `r${b64url(raw)}`;
   if (typeof CompressionStream === "function") {
     try {

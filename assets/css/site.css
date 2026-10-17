@@ -186,8 +186,10 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
 .fact-links a { overflow-wrap: anywhere; }
 .sheet-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
   align-items: stretch;
   padding-bottom: 4px;
 }
@@ -234,7 +236,7 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
 .model-choice[aria-pressed="true"] { background: var(--indigo); color: #f6efe2; border-color: var(--indigo); }
 .model-title { font-family: var(--serif); font-size: 2rem; margin: 0; }
 .note { margin: 0; color: #5c5348; }
-.paper-wrap { display: grid; justify-items: center; }
+.paper-wrap { display: grid; justify-items: center; min-width: 0; }
 .paper, .fold-host {
   position: relative;
   width: min(100%, 640px);

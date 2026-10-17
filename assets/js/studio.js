@@ -424,15 +424,15 @@ function syncShareActions() {
 function holdDesktopPage() {
   if (window.matchMedia("(max-width: 879px)").matches) return;
   heldScrollY = window.scrollY;
-  document.body.style.minHeight = `${document.documentElement.scrollHeight}px`;
-  document.documentElement.style.overflowAnchor = "none";
+  // Keep the extra height on the root, not the body. Stretching the body
+  // resamples its gradient and shifts the page colour by a few levels.
+  document.documentElement.style.minHeight = `${document.documentElement.scrollHeight}px`;
   heldDesktop = true;
 }
 
 function releaseDesktopPage() {
   if (!heldDesktop) return;
-  document.body.style.minHeight = "";
-  document.documentElement.style.overflowAnchor = "";
+  document.documentElement.style.minHeight = "";
   heldDesktop = false;
 }
 
