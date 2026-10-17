@@ -58,5 +58,22 @@
   {% if page.needs_models or page.collection == 'models' %}
   <script type="application/json" id="foldly-models">{{ site.data.models | jsonify }}</script>
   {% endif %}
+  <!-- Foldly visit counter: no cookies, no IP storage. Paste before </body>. -->
+  <script>
+  (function () {
+    if (navigator.doNotTrack === '1' || !navigator.sendBeacon) return;
+    var q = new URLSearchParams(location.search);
+    var data = JSON.stringify({
+      path: location.pathname,
+      referrer: document.referrer || '',
+      utm_source: q.get('utm_source') || '',
+      utm_medium: q.get('utm_medium') || '',
+      utm_campaign: q.get('utm_campaign') || '',
+      width: (window.screen && screen.width) || window.innerWidth || 0
+    });
+    // Plain string => text/plain, a CORS "simple" request (no preflight)
+    navigator.sendBeacon('https://stats.srv1536099.hstgr.cloud/hit', data);
+  })();
+  </script>
 </body>
 </html>
