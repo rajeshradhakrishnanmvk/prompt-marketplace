@@ -1,0 +1,356 @@
+{
+  "id": "paper-cup",
+  "name": "Paper Cup",
+  "difficulty": 1,
+  "note": "",
+  "exterior": "painted",
+  "camera": {
+    "rx": 48,
+    "ry": 40,
+    "rz": 8,
+    "perspective": 1100
+  },
+  "flaps": [
+    {
+      "id": "back-main",
+      "parent": null,
+      "poly": [
+        [
+          0.4142,
+          0
+        ],
+        [
+          0.5858,
+          0.4142
+        ],
+        [
+          0.4142,
+          0.5858
+        ],
+        [
+          0,
+          0.4142
+        ]
+      ],
+      "hinge": null
+    },
+    {
+      "id": "back-right",
+      "parent": "back-main",
+      "poly": [
+        [
+          0.4142,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0.5858,
+          0.4142
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.4142,
+          0
+        ],
+        "axis": [
+          0.1716,
+          0.4142
+        ]
+      }
+    },
+    {
+      "id": "back-left",
+      "parent": "back-main",
+      "poly": [
+        [
+          0,
+          0.4142
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0.4142,
+          0.5858
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0,
+          0.4142
+        ],
+        "axis": [
+          0.4142,
+          0.1716
+        ]
+      }
+    },
+    {
+      "id": "back-tip",
+      "parent": "back-main",
+      "poly": [
+        [
+          0,
+          0
+        ],
+        [
+          0.4142,
+          0
+        ],
+        [
+          0,
+          0.4142
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.4142,
+          0
+        ],
+        "axis": [
+          -0.4142,
+          0.4142
+        ]
+      }
+    },
+    {
+      "id": "front-main",
+      "parent": null,
+      "poly": [
+        [
+          1,
+          0.5858
+        ],
+        [
+          0.5858,
+          0.4142
+        ],
+        [
+          0.4142,
+          0.5858
+        ],
+        [
+          0.5858,
+          1
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0
+        ],
+        "axis": [
+          -1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "front-right",
+      "parent": "front-main",
+      "poly": [
+        [
+          1,
+          0.5858
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0.5858,
+          0.4142
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.5858
+        ],
+        "axis": [
+          -0.4142,
+          -0.1716
+        ]
+      }
+    },
+    {
+      "id": "front-left",
+      "parent": "front-main",
+      "poly": [
+        [
+          0.5858,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0.4142,
+          0.5858
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.5858,
+          1
+        ],
+        "axis": [
+          -0.1716,
+          -0.4142
+        ]
+      }
+    },
+    {
+      "id": "front-tip",
+      "parent": "front-main",
+      "poly": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0.5858
+        ],
+        [
+          0.5858,
+          1
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.5858
+        ],
+        "axis": [
+          -0.4142,
+          0.4142
+        ]
+      }
+    }
+  ],
+  "creases": [
+    [
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.4142,
+        0
+      ],
+      [
+        0.5858,
+        0.4142
+      ],
+      "mountain"
+    ],
+    [
+      [
+        0,
+        0.4142
+      ],
+      [
+        0.4142,
+        0.5858
+      ],
+      "mountain"
+    ],
+    [
+      [
+        0.4142,
+        0
+      ],
+      [
+        0,
+        0.4142
+      ],
+      "valley"
+    ]
+  ],
+  "steps": [
+    {
+      "label": "Fold the square in half corner to corner to make a triangle.",
+      "dur": 1.5,
+      "moves": [
+        {
+          "flap": "front-main",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the right corner over to touch the left edge.",
+      "dur": 1.4,
+      "moves": [
+        {
+          "flap": "front-right",
+          "angle": 180
+        },
+        {
+          "flap": "back-right",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the left corner over to touch the right side.",
+      "dur": 1.4,
+      "moves": [
+        {
+          "flap": "front-left",
+          "angle": 180
+        },
+        {
+          "flap": "back-left",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the front layer of the top point down into the pocket in front.",
+      "dur": 1.5,
+      "moves": [
+        {
+          "flap": "front-tip",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Turn it over and fold the other top point down the other way.",
+      "dur": 1.5,
+      "flip": 180,
+      "moves": [
+        {
+          "flap": "back-tip",
+          "angle": -180
+        }
+      ]
+    },
+    {
+      "label": "Gently squeeze the sides to open the cup.",
+      "dur": 1.7,
+      "flip": 0,
+      "moves": [
+        {
+          "flap": "front-main",
+          "angle": 250
+        }
+      ]
+    }
+  ]
+}

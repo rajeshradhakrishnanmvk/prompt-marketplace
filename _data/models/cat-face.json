@@ -1,0 +1,548 @@
+{
+  "id": "cat-face",
+  "name": "Cat Face",
+  "difficulty": 1,
+  "note": "",
+  "exterior": "painted",
+  "camera": {
+    "rx": -8,
+    "ry": -6,
+    "rz": 225,
+    "perspective": 1600
+  },
+  "flaps": [
+    {
+      "id": "back-main",
+      "parent": null,
+      "poly": [
+        [
+          0.5,
+          0.05
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.05,
+          0.5
+        ]
+      ],
+      "hinge": null
+    },
+    {
+      "id": "back-right",
+      "parent": "back-main",
+      "poly": [
+        [
+          0.5,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0.5,
+          0.5
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.5,
+          0
+        ],
+        "axis": [
+          0,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "back-left",
+      "parent": "back-main",
+      "poly": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          0.5
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0,
+          0.5
+        ],
+        "axis": [
+          0.5,
+          0
+        ]
+      }
+    },
+    {
+      "id": "back-tip",
+      "parent": "back-main",
+      "poly": [
+        [
+          0.26,
+          0
+        ],
+        [
+          0.5,
+          0
+        ],
+        [
+          0.5,
+          0.05
+        ],
+        [
+          0.05,
+          0.5
+        ],
+        [
+          0,
+          0.5
+        ],
+        [
+          0,
+          0.26
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.5,
+          0.05
+        ],
+        "axis": [
+          -0.45,
+          0.45
+        ]
+      }
+    },
+    {
+      "id": "tuck",
+      "parent": "back-tip",
+      "poly": [
+        [
+          0,
+          0
+        ],
+        [
+          0.26,
+          0
+        ],
+        [
+          0,
+          0.26
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.26,
+          0
+        ],
+        "axis": [
+          -0.26,
+          0.26
+        ]
+      }
+    },
+    {
+      "id": "front-main",
+      "parent": null,
+      "poly": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0.5
+        ],
+        [
+          0.66,
+          0.5
+        ],
+        [
+          0.5,
+          0.66
+        ],
+        [
+          0.5,
+          1
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0
+        ],
+        "axis": [
+          -1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "side-l",
+      "parent": "front-main",
+      "poly": [
+        [
+          1,
+          0.46
+        ],
+        [
+          1,
+          0.5
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.66,
+          0.34
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.5
+        ],
+        "axis": [
+          -0.5,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ear-l",
+      "parent": "side-l",
+      "poly": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0.46
+        ],
+        [
+          0.66,
+          0.34
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.46
+        ],
+        "axis": [
+          -0.34,
+          -0.12
+        ]
+      }
+    },
+    {
+      "id": "side-r",
+      "parent": "front-main",
+      "poly": [
+        [
+          0.46,
+          1
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.34,
+          0.66
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.5,
+          1
+        ],
+        "axis": [
+          0,
+          -0.5
+        ]
+      }
+    },
+    {
+      "id": "ear-r",
+      "parent": "side-r",
+      "poly": [
+        [
+          0,
+          1
+        ],
+        [
+          0.46,
+          1
+        ],
+        [
+          0.34,
+          0.66
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.46,
+          1
+        ],
+        "axis": [
+          -0.12,
+          -0.34
+        ]
+      }
+    },
+    {
+      "id": "top",
+      "parent": "front-main",
+      "poly": [
+        [
+          0.5,
+          0.57
+        ],
+        [
+          0.5,
+          0.66
+        ],
+        [
+          0.66,
+          0.5
+        ],
+        [
+          0.57,
+          0.5
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.5,
+          0.66
+        ],
+        "axis": [
+          0.16,
+          -0.16
+        ]
+      }
+    },
+    {
+      "id": "nose",
+      "parent": "top",
+      "poly": [
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.5,
+          0.57
+        ],
+        [
+          0.57,
+          0.5
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.5,
+          0.57
+        ],
+        "axis": [
+          0.07,
+          -0.07
+        ]
+      }
+    }
+  ],
+  "creases": [
+    [
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.5,
+        0
+      ],
+      [
+        0.5,
+        0.5
+      ],
+      "valley"
+    ],
+    [
+      [
+        0,
+        0.5
+      ],
+      [
+        0.5,
+        0.5
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.54,
+        0
+      ],
+      [
+        0.66,
+        0.34
+      ],
+      "mountain"
+    ],
+    [
+      [
+        0,
+        0.54
+      ],
+      [
+        0.34,
+        0.66
+      ],
+      "mountain"
+    ],
+    [
+      [
+        0.34,
+        0.5
+      ],
+      [
+        0.5,
+        0.34
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.42,
+        0
+      ],
+      [
+        0,
+        0.42
+      ],
+      "mountain"
+    ]
+  ],
+  "steps": [
+    {
+      "label": "Fold the square in half corner to corner to make a triangle.",
+      "dur": 1.15,
+      "moves": [
+        {
+          "flap": "front-main",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the left and right corners down to the bottom corner.",
+      "dur": 1.15,
+      "moves": [
+        {
+          "flap": "side-l",
+          "angle": 180
+        },
+        {
+          "flap": "side-r",
+          "angle": 180
+        },
+        {
+          "flap": "back-right",
+          "angle": 180
+        },
+        {
+          "flap": "back-left",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the two top flaps up and out to make the ears.",
+      "dur": 1.2,
+      "moves": [
+        {
+          "flap": "ear-l",
+          "angle": 180
+        },
+        {
+          "flap": "ear-r",
+          "angle": -180
+        }
+      ]
+    },
+    {
+      "label": "Fold the top corner down.",
+      "dur": 1.05,
+      "moves": [
+        {
+          "flap": "top",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Turn it over and fold the bottom layer up.",
+      "dur": 1.05,
+      "flip": 180,
+      "moves": [
+        {
+          "flap": "back-tip",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the tip of the top layer down to make the nose.",
+      "dur": 1.05,
+      "flip": 0,
+      "moves": [
+        {
+          "flap": "nose",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Tuck the bottom corner inside the model.",
+      "dur": 1.1,
+      "moves": [
+        {
+          "flap": "tuck",
+          "angle": -180
+        }
+      ]
+    },
+    {
+      "label": "Draw on the eyes and whiskers.",
+      "dur": 1.25,
+      "moves": []
+    }
+  ]
+}

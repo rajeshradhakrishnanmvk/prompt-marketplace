@@ -1,0 +1,110 @@
+---
+layout: default
+title: Studio
+permalink: /fold/
+description: Paint a square of paper, then watch Foldly fold it in 3D.
+needs_models: true
+body_class: studio
+---
+<div id="fold-page" class="studio-app">
+  <div class="toolbar" id="paint-ui" role="toolbar" aria-label="Paint tools">
+    <div class="tool-group" aria-label="Tools">
+      <button type="button" class="tool-btn" data-tool="brush" aria-pressed="true">Brush</button>
+      <button type="button" class="tool-btn" data-tool="fill" aria-pressed="false">Fill</button>
+      <button type="button" class="tool-btn" data-tool="eraser" aria-pressed="false">Eraser</button>
+    </div>
+    <div class="tool-group" aria-label="Brush size">
+      <button type="button" class="tool-btn" data-size="0" aria-pressed="false" aria-label="Small brush">S</button>
+      <button type="button" class="tool-btn" data-size="1" aria-pressed="true" aria-label="Medium brush">M</button>
+      <button type="button" class="tool-btn" data-size="2" aria-pressed="false" aria-label="Large brush">L</button>
+    </div>
+    <div class="tool-group" aria-label="Colours">
+      <button type="button" class="swatch" data-swatch="0" aria-label="Ink" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="1" aria-label="Paper white" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="2" aria-label="Red" aria-pressed="true"></button>
+      <button type="button" class="swatch" data-swatch="3" aria-label="Orange" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="4" aria-label="Gold" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="5" aria-label="Green" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="6" aria-label="Teal" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="7" aria-label="Blue" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="8" aria-label="Indigo" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="9" aria-label="Purple" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="10" aria-label="Pink" aria-pressed="false"></button>
+      <button type="button" class="swatch" data-swatch="11" aria-label="Brown" aria-pressed="false"></button>
+      <label class="tool-btn">Custom
+        <input id="custom-color" type="color" value="#d64532" aria-label="Custom color">
+      </label>
+    </div>
+    <div class="tool-group" aria-label="Mirror symmetry">
+      <button type="button" class="tool-btn" data-sym="none" aria-pressed="true">None</button>
+      <button type="button" class="tool-btn" data-sym="vertical" aria-pressed="false">Vertical</button>
+      <button type="button" class="tool-btn" data-sym="four" aria-pressed="false">4-way</button>
+    </div>
+    <div class="tool-group" aria-label="Paper side">
+      <button type="button" class="tool-btn" id="side-front" aria-pressed="true">Front</button>
+      <button type="button" class="tool-btn" id="side-back" aria-pressed="false">Back</button>
+      <p class="hint" id="side-note" hidden>The back stays hidden. Paint the front.</p>
+    </div>
+    <div class="tool-group">
+      <button type="button" class="tool-btn" id="creases-btn" aria-pressed="true">Creases</button>
+      <button type="button" class="tool-btn" id="undo-btn">Undo</button>
+      <button type="button" class="tool-btn" id="redo-btn">Redo</button>
+      <button type="button" class="tool-btn" id="clear-btn">Clear</button>
+      <button type="button" class="tool-btn" id="surprise-btn">Surprise me</button>
+    </div>
+    <p class="hint">Shortcuts: B brush, F fill, E eraser, Ctrl+Z undo.</p>
+  </div>
+
+  <div class="model-picker" role="group" aria-label="Choose a model">
+    {% assign models = site.models | sort: "order" %}
+    {% for m in models %}
+    <button type="button" class="model-choice" data-model="{{ m.model_id }}" data-name="{{ m.card_name }}" data-note="{{ m.studio_note }}" aria-pressed="false">{{ m.picker }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="paper-wrap fold-column">
+    <div id="remix-banner" class="banner" hidden>
+      <p>Someone shared this fold with you.</p>
+      <button type="button" class="btn primary" id="remix-btn">Remix</button>
+    </div>
+    <h1 class="model-title" id="model-title">Paper Cup</h1>
+    <p class="note" id="model-note" hidden></p>
+    <div class="paper" id="paper" data-side="front">
+      <canvas id="front-canvas" class="is-active" width="1024" height="1024" tabindex="0" aria-label="Front of the paper. Paint here."></canvas>
+      <canvas id="back-canvas" width="1024" height="1024" tabindex="0" aria-label="Back of the paper. Paint here."></canvas>
+      <svg id="creases" class="creases" aria-hidden="true"></svg>
+    </div>
+    <div id="fold-host" class="fold-host" hidden></div>
+    <div id="fold-ui" class="transport" hidden>
+      <p class="step-count" id="step-count"></p>
+      <p class="step-label" id="step-label" aria-live="polite"></p>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Fold progress" aria-valuemin="0" aria-valuemax="1000">
+      <div class="transport-row">
+        <button type="button" class="btn" id="play-btn" aria-pressed="false">Play</button>
+        <button type="button" class="btn" id="prev-btn" hidden>Previous</button>
+        <button type="button" class="btn" id="next-btn" hidden>Next step</button>
+        <button type="button" class="btn" id="repaint-btn">Repaint</button>
+        <button type="button" class="btn primary" id="share-btn">Share</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fold-bar">
+    <button type="button" class="btn primary xl" id="fold-btn">Fold</button>
+  </div>
+</div>
+
+<dialog id="share-dialog" aria-labelledby="share-heading">
+  <h2 id="share-heading">Share your fold</h2>
+  <label for="share-url">Link</label>
+  <input id="share-url" type="text" readonly>
+  <p id="share-status" class="status" aria-live="polite"></p>
+  <div class="share-actions">
+    <button type="button" class="btn" id="copy-link" title="Copy a link to your folded model">Copy link</button>
+    <button type="button" class="btn" id="download-png" title="Save a picture of your model (PNG)">Download picture</button>
+    <button type="button" class="btn" id="download-video" title="Save a video of your model folding">Download video</button>
+    <button type="button" class="btn" id="native-share" hidden>Share…</button>
+  </div>
+  <form method="dialog"><button class="btn ghost" type="submit">Close</button></form>
+</dialog>
+<script type="module" src="{{ site.baseurl }}/assets/js/studio.js"></script>

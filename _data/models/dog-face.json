@@ -1,0 +1,360 @@
+{
+  "id": "dog-face",
+  "name": "Dog Face",
+  "difficulty": 1,
+  "note": "",
+  "camera": {
+    "rx": -10,
+    "ry": 8,
+    "rz": 225,
+    "perspective": 1600
+  },
+  "flaps": [
+    {
+      "id": "back-main",
+      "parent": null,
+      "poly": [
+        [
+          0,
+          0
+        ],
+        [
+          0.92,
+          0
+        ],
+        [
+          0,
+          0.92
+        ]
+      ],
+      "hinge": null
+    },
+    {
+      "id": "back-top",
+      "parent": "back-main",
+      "poly": [
+        [
+          0.92,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0.92
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.92,
+          0
+        ],
+        "axis": [
+          -0.92,
+          0.92
+        ]
+      }
+    },
+    {
+      "id": "front",
+      "parent": null,
+      "poly": [],
+      "hinge": {
+        "p": [
+          1,
+          0
+        ],
+        "axis": [
+          -1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "face-l",
+      "parent": "front",
+      "poly": [
+        [
+          1,
+          0.84
+        ],
+        [
+          1,
+          0.22
+        ],
+        [
+          0.71,
+          0.29
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.92,
+          0.92
+        ]
+      ],
+      "hinge": null
+    },
+    {
+      "id": "nose",
+      "parent": "face-l",
+      "poly": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0.84
+        ],
+        [
+          0.92,
+          0.92
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.84
+        ],
+        "axis": [
+          -0.08,
+          0.08
+        ]
+      }
+    },
+    {
+      "id": "ear-l",
+      "parent": "face-l",
+      "poly": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0.22
+        ],
+        [
+          0.71,
+          0.29
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          0.22
+        ],
+        "axis": [
+          -0.29,
+          0.07
+        ]
+      }
+    },
+    {
+      "id": "face-r",
+      "parent": "front",
+      "poly": [
+        [
+          1,
+          1
+        ],
+        [
+          0.22,
+          1
+        ],
+        [
+          0.29,
+          0.71
+        ],
+        [
+          0.5,
+          0.5
+        ]
+      ],
+      "hinge": {
+        "p": [
+          1,
+          1
+        ],
+        "axis": [
+          -0.5,
+          -0.5
+        ]
+      }
+    },
+    {
+      "id": "ear-r",
+      "parent": "face-r",
+      "poly": [
+        [
+          0,
+          1
+        ],
+        [
+          0.22,
+          1
+        ],
+        [
+          0.29,
+          0.71
+        ]
+      ],
+      "hinge": {
+        "p": [
+          0.22,
+          1
+        ],
+        "axis": [
+          0.07,
+          -0.29
+        ]
+      }
+    }
+  ],
+  "creases": [
+    [
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      "valley"
+    ],
+    [
+      [
+        0,
+        0
+      ],
+      [
+        0.5,
+        0.5
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.78,
+        0
+      ],
+      [
+        0.71,
+        0.29
+      ],
+      "valley"
+    ],
+    [
+      [
+        0,
+        0.78
+      ],
+      [
+        0.29,
+        0.71
+      ],
+      "valley"
+    ],
+    [
+      [
+        0.16,
+        0
+      ],
+      [
+        0.08,
+        0.08
+      ],
+      "mountain"
+    ],
+    [
+      [
+        0.92,
+        0
+      ],
+      [
+        0,
+        0.92
+      ],
+      "mountain"
+    ]
+  ],
+  "steps": [
+    {
+      "label": "Turn the square so it looks like a diamond. Fold the top corner down to the bottom corner to make a triangle.",
+      "dur": 1.5,
+      "moves": [
+        {
+          "flap": "front",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the triangle in half side to side, then unfold it.",
+      "dur": 1.55,
+      "moves": [
+        {
+          "flap": "face-r",
+          "angle": 180,
+          "from": 0,
+          "to": 0.42
+        },
+        {
+          "flap": "face-r",
+          "angle": 0,
+          "from": 0.58,
+          "to": 1
+        }
+      ]
+    },
+    {
+      "label": "Fold both side corners down to make the floppy ears.",
+      "dur": 1.5,
+      "moves": [
+        {
+          "flap": "ear-l",
+          "angle": 180
+        },
+        {
+          "flap": "ear-r",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Fold the bottom point of the top layer up a little to make the nose.",
+      "dur": 1.3,
+      "moves": [
+        {
+          "flap": "nose",
+          "angle": 62
+        }
+      ]
+    },
+    {
+      "label": "Fold the top edge back behind the head.",
+      "dur": 1.4,
+      "moves": [
+        {
+          "flap": "back-top",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "label": "Draw on the eyes and mouth.",
+      "dur": 1.75,
+      "moves": []
+    }
+  ]
+}

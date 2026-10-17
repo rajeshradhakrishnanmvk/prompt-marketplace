@@ -1,0 +1,27 @@
+---
+layout: default
+title: Authoring preview
+permalink: /author/
+description: Preview flap angles while authoring a Foldly model.
+needs_models: true
+robots: noindex
+---
+<article class="author-layout">
+  <h1>Authoring preview</h1>
+  <p>Per-flap sliders for checking hinge angles. This page is a builder tool.</p>
+  <div class="author-actions">
+    <label>Model <select id="author-model" aria-label="Model"></select></label>
+    <button type="button" class="btn" id="play">Play</button>
+    <label class="btn"><input type="checkbox" id="debug"> Colour flaps</label>
+    <label class="btn"><input type="checkbox" id="show-proj"> Canvas projection</label>
+    <button type="button" class="btn" id="copy">Copy angles</button>
+  </div>
+  <div class="author-stage">
+    <div id="author-stage" class="fold-host"></div>
+    <canvas id="overlay" hidden></canvas>
+  </div>
+  <div id="steps" class="author-actions"></div>
+  <div id="sliders" class="sliders"></div>
+  <textarea id="dump" class="dump" readonly aria-label="Angle JSON"></textarea>
+</article>
+<script type="module" src="{{ site.baseurl }}/assets/js/author.js"></script>

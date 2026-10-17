@@ -1,0 +1,65 @@
+---
+layout: default
+---
+{% assign model = site.data.models[page.model_id] %}
+<article class="model-page">
+  <h1>{{ page.seo_title }}</h1>
+  <p class="intro">{{ page.intro }}</p>
+  <dl class="facts">
+    <div>
+      <dt><span class="est">Difficulty (estimate)</span></dt>
+      <dd>{{ page.difficulty_label }}</dd>
+    </div>
+    <div>
+      <dt><span class="est">Time (estimate)</span></dt>
+      <dd>{{ page.time_label }}</dd>
+    </div>
+    <div>
+      <dt>Materials</dt>
+      <dd>{{ page.materials }}</dd>
+    </div>
+  </dl>
+
+  <div class="player no-print">
+    <div id="mini-fold" class="fold-host"></div>
+    <div class="transport">
+      <p class="step-label" id="mini-label"></p>
+      <input id="mini-scrub" type="range" min="0" max="1000" value="0" aria-label="Fold progress">
+      <div class="transport-row">
+        <button type="button" class="btn" id="mini-play">Play</button>
+        <button type="button" class="btn" id="mini-next" hidden>Next step</button>
+      </div>
+    </div>
+  </div>
+
+  <ol class="steps">
+    {% for step in page.steps %}
+    <li>
+      <svg class="step-diagram" data-step="{{ forloop.index0 }}" role="img" aria-label="Diagram for step {{ forloop.index }}"></svg>
+      <div>
+        <h3>{{ forloop.index }}. {{ step.text }}</h3>
+        {% if step.tip %}<p class="tip">Tip: {{ step.tip }}</p>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <aside class="teacher">
+    <h2>Teacher note</h2>
+    <p>{{ page.teacher_note }}</p>
+  </aside>
+
+  <p class="cta-row no-print"><a class="btn primary xl" href="{{ site.baseurl }}/fold/#m={{ page.model_id }}">Paint yours online</a></p>
+
+  <section class="print-only crease-wrap">
+    <h2>Cut-out crease pattern</h2>
+    <svg viewBox="0 0 100 100" role="img" aria-label="Crease pattern to cut out">
+      <rect x="1" y="1" width="98" height="98" fill="white" stroke="black" stroke-width="0.8"/>
+      {% for c in model.creases %}
+      <line x1="{{ c[0][0] | times: 100 }}" y1="{{ c[0][1] | times: 100 }}" x2="{{ c[1][0] | times: 100 }}" y2="{{ c[1][1] | times: 100 }}" stroke="black" stroke-width="0.45" stroke-dasharray="{% if c[2] == 'mountain' %}0.8 1.1{% else %}2.4 1.1{% endif %}" fill="none"/>
+      {% endfor %}
+    </svg>
+    <p class="legend">Cut along the solid line. Dashed creases are valleys. Dotted creases are mountains.</p>
+  </section>
+</article>
+<script type="module" src="{{ site.baseurl }}/assets/js/model-page.js"></script>
