@@ -120,6 +120,7 @@ export function createPaint(frontCanvas, backCanvas) {
   let snapshot = null;
   let current = null;
   let sheet = null;
+  let regions = null;
 
   function traceSheet(g) {
     g.beginPath();
@@ -132,7 +133,28 @@ export function createPaint(frontCanvas, backCanvas) {
     g.closePath();
   }
 
+  function traceRegions(g) {
+    g.beginPath();
+    for (const poly of regions) {
+      poly.forEach(([x, y], i) => {
+        const px = x * 1024;
+        const py = y * 1024;
+        if (i) g.lineTo(px, py);
+        else g.moveTo(px, py);
+      });
+      g.closePath();
+    }
+  }
+
   function clipped(g, fn) {
+    if (regions && regions.length) {
+      g.save();
+      traceRegions(g);
+      g.clip();
+      fn();
+      g.restore();
+      return;
+    }
     if (!sheet || sheet.length < 3) {
       fn();
       return;
@@ -156,6 +178,14 @@ export function createPaint(frontCanvas, backCanvas) {
 
   function fillPaper(side) {
     const g = ctx[side];
+    if (regions && regions.length) {
+      g.clearRect(0, 0, 1024, 1024);
+      clipped(g, () => {
+        g.fillStyle = paperHex(side);
+        g.fillRect(0, 0, 1024, 1024);
+      });
+      return;
+    }
     if (!sheet) {
       g.fillStyle = paperHex(side);
       g.fillRect(0, 0, 1024, 1024);
@@ -177,9 +207,19 @@ export function createPaint(frontCanvas, backCanvas) {
     sideCtx.restore();
   }
 
+  function maskRegions(sideCtx) {
+    sideCtx.save();
+    sideCtx.globalCompositeOperation = "destination-in";
+    traceRegions(sideCtx);
+    sideCtx.fillStyle = "#000";
+    sideCtx.fill();
+    sideCtx.restore();
+  }
+
   function drawStroke(sideCtx, stroke) {
     clipped(sideCtx, () => drawStrokeBody(sideCtx, stroke));
-    if (sheet && stroke.tool === "fill") maskSheet(sideCtx);
+    if (regions && regions.length && stroke.tool === "fill") maskRegions(sideCtx);
+    else if (sheet && stroke.tool === "fill") maskSheet(sideCtx);
   }
 
   function drawStrokeBody(sideCtx, stroke) {
@@ -320,8 +360,35 @@ export function createPaint(frontCanvas, backCanvas) {
     },
     replay,
     setSheet(next) {
+      regions = null;
       sheet = next && next.length >= 3 ? next : null;
       replay();
+    },
+    setRegions(next, options = {}) {
+      sheet = null;
+      regions = next && next.length ? next : null;
+      if (options.replay !== false) replay();
+    },
+    capture() {
+      const copy = (list) => list.map((stroke) => ({
+        ...stroke,
+        points: stroke.points ? stroke.points.map((p) => p.slice()) : undefined,
+      }));
+      return {
+        strokes: copy(strokes),
+        undoStack: undoStack.map((list) => copy(list)),
+        redoStack: redoStack.map((list) => copy(list)),
+      };
+    },
+    restore(state) {
+      const next = state || { strokes: [], undoStack: [], redoStack: [] };
+      strokes = next.strokes || [];
+      undoStack = next.undoStack || [];
+      redoStack = next.redoStack || [];
+      replay();
+    },
+    addStrokes(list) {
+      commit(strokes.concat(list));
     },
   };
 }

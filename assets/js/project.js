@@ -1,5 +1,6 @@
 import { multiply, rotateX, rotateY, rotateZ, transformPoint } from "./matrix.js";
 import { sample, worldMatrices } from "./runtime.js";
+import { dockMatrix, hingeMatrices, renderMatrix } from "./assembly.js";
 
 /**
  * Project flap polygons with the same hinge matrices the CSS view uses.
@@ -13,6 +14,7 @@ function rigMatrix(camera) {
 }
 
 export function projectPolygons(model, prep, angles, camera, size) {
+  if (model.type === "assembly") return buildAssembly(model, prep, angles, camera, size).polys;
   const worlds = worldMatrices(model, prep, angles, size);
   const rig = rigMatrix(camera);
   const persp = camera.perspective || 900;
@@ -36,6 +38,7 @@ export function projectPolygons(model, prep, angles, camera, size) {
 }
 
 export function projectFlaps(model, prep, angles, camera, size) {
+  if (model.type === "assembly") return buildAssembly(model, prep, angles, camera, size).tris;
   const worlds = worldMatrices(model, prep, angles, size);
   const rig = rigMatrix(camera);
   const persp = camera.perspective || 900;
@@ -198,7 +201,11 @@ export function frameFit(model, prep, baseCamera, size, margin = 0.06) {
   return { scale, dx: size / 2 - cx * scale, dy: size / 2 - cy * scale };
 }
 
-export function paintProjection(ctx, model, prep, angles, camera, front, back, size, fit) {
+export function paintProjection(ctx, model, prep, angles, camera, front, back, size, fit, textures) {
+  if (model.type === "assembly") {
+    paintAssembly(ctx, model, prep, angles, camera, front, back, size, fit, textures);
+    return;
+  }
   const tris = projectFlaps(model, prep, angles, camera, size).map((tri) => ({
     ...tri,
     p0: movePoint(tri.p0, fit),
@@ -264,6 +271,112 @@ export function paintProjection(ctx, model, prep, angles, camera, front, back, s
     ctx.beginPath();
     face.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function projectVertex(m, u, v, uv, rig, persp, size) {
+  const [x, y, z] = transformPoint(m, u, v, 0);
+  const [rx, ry, rz] = transformPoint(rig, x - 0.5, y - 0.5, z);
+  const zpx = rz * size;
+  const denom = persp - zpx;
+  const k = Math.abs(denom) < 0.001 ? 1 : persp / denom;
+  return {
+    u: u * uv.s + uv.ox,
+    v: v * uv.s + uv.oy,
+    x: size / 2 + rx * size * k,
+    y: size / 2 + ry * size * k,
+    z: zpx,
+  };
+}
+
+function buildAssembly(model, prep, angles, camera, size) {
+  const state = (angles && angles.assembly) || { phase: "assembly", visible: null, docks: null, pulse: null };
+  const scale = (model.scene && model.scene.scale) || 1 / 700;
+  const rotateDeg = model.scene && model.scene.rotateX != null ? model.scene.rotateX : 90;
+  const rig = rigMatrix(camera);
+  const persp = camera.perspective || 900;
+  const tris = [];
+  const polys = [];
+  for (const part of prep.parts) {
+    if (state.visible && !state.visible[part.id]) continue;
+    const hinges = hingeMatrices(part, angles || {});
+    const folding = state.phase === "fold";
+    const dockM = folding ? null : (state.docks && state.docks[part.id]) || dockMatrix(part);
+    const pulseScale = state.pulse && state.pulse.part === part.id ? 1 + 0.045 * Math.sin(state.pulse.u * Math.PI) : 1;
+    for (const flap of part.flaps) {
+      if (!flap.poly || flap.poly.length < 3 || !hinges[flap.id]) continue;
+      const M = renderMatrix(hinges[flap.id], dockM, scale, rotateDeg, pulseScale);
+      const cam = flap.poly.map(([u, v]) => projectVertex(M, u, v, part.uv, rig, persp, size));
+      const z = cam.reduce((sum, p) => sum + p.z, 0) / cam.length;
+      polys.push({ flapId: flap.id, partId: part.id, pts: cam, z });
+      for (let i = 1; i < cam.length - 1; i += 1) {
+        const p0 = cam[0];
+        const p1 = cam[i];
+        const p2 = cam[i + 1];
+        const facing = (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y);
+        tris.push({ flapId: flap.id, partId: part.id, p0, p1, p2, facing, z: (p0.z + p1.z + p2.z) / 3 });
+      }
+    }
+  }
+  tris.sort((a, b) => a.z - b.z);
+  polys.sort((a, b) => a.z - b.z);
+  return { tris, polys };
+}
+
+function paintAssembly(ctx, model, prep, angles, camera, front, back, size, fit, textures) {
+  const built = buildAssembly(model, prep, angles, camera, size);
+  const faces = built.polys.map((poly) => ({ ...poly, pts: poly.pts.map((p) => movePoint(p, fit)) }));
+  const tris = built.tris.map((tri) => ({
+    ...tri,
+    p0: movePoint(tri.p0, fit),
+    p1: movePoint(tri.p1, fit),
+    p2: movePoint(tri.p2, fit),
+  }));
+  const byFlap = new Map();
+  for (const tri of tris) {
+    const key = `${tri.partId}:${tri.flapId}`;
+    if (!byFlap.has(key)) byFlap.set(key, []);
+    byFlap.get(key).push(tri);
+  }
+  const pair = (partId) => {
+    if (textures && textures[partId]) return textures[partId];
+    return { front, back };
+  };
+  ctx.save();
+  ctx.lineJoin = "round";
+  for (const face of faces) {
+    const images = pair(face.partId);
+    const faceTris = byFlap.get(`${face.partId}:${face.flapId}`) || [];
+    for (const tri of faceTris) {
+      const image = tri.facing >= 0 ? images.front : images.back;
+      const w = image.width || 1024;
+      const h = image.height || 1024;
+      const uv = (p) => ({ x: (tri.facing >= 0 ? p.u : 1 - p.u) * w, y: p.v * h });
+      drawTexturedTriangle(ctx, image, uv(tri.p0), uv(tri.p1), uv(tri.p2), tri.p0, tri.p1, tri.p2);
+    }
+    if (faceTris.length > 1) {
+      const seam = Math.max(1.5, size / 200);
+      for (const tri of faceTris) {
+        const image = tri.facing >= 0 ? images.front : images.back;
+        const color = solidSeamColor(image, tri);
+        if (!color) continue;
+        ctx.beginPath();
+        ctx.moveTo(tri.p0.x, tri.p0.y);
+        ctx.lineTo(tri.p2.x, tri.p2.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = seam;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+    }
+    if (face.pts.length < 2) continue;
+    ctx.beginPath();
+    face.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(28, 24, 18, 0.45)";
+    ctx.lineWidth = Math.max(1, size / 280);
     ctx.stroke();
   }
   ctx.restore();

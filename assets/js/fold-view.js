@@ -1,5 +1,5 @@
 import { frameFit, paintProjection, poseFit, projectPolygons } from "./project.js";
-import { prepare, sample } from "./runtime.js";
+import { prepareModel, sampleModel } from "./scene.js";
 
 /**
  * Fold view drawn into a canvas.
@@ -31,7 +31,7 @@ export function reducedMotion() {
 }
 
 export function createFoldView(host, model, options = {}) {
-  const prep = prepare(model);
+  const prep = prepareModel(model);
   host.innerHTML = "";
   const stage = el("div", "stage");
   stage.setAttribute("role", "application");
@@ -56,6 +56,7 @@ export function createFoldView(host, model, options = {}) {
   const listeners = new Set();
   let frontImage = blankPaper("front");
   let backImage = blankPaper("back");
+  let sheetImages = null;
   let fitKey = "";
   let fit = { scale: 1, dx: 0, dy: 0 };
 
@@ -71,7 +72,7 @@ export function createFoldView(host, model, options = {}) {
   function state() {
     const sampled = override
       ? { angles: override, stepIndex: 0, label: "Custom", flip: 0, t: t * prep.duration }
-      : sample(prep, t * prep.duration);
+      : sampleModel(prep, t * prep.duration);
     return sampled;
   }
 
@@ -97,7 +98,7 @@ export function createFoldView(host, model, options = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
     const camera = cameraFor(sampled);
-    const placed = model.shape === "net"
+    const placed = model.shape === "net" || model.type === "assembly"
       ? poseFit(model, prep, sampled.angles, camera, size, 0.08)
       : fitFor(size);
     if (debug) {
@@ -115,7 +116,7 @@ export function createFoldView(host, model, options = {}) {
         ctx.fill();
       });
     } else {
-      paintProjection(ctx, model, prep, sampled.angles, camera, frontImage, backImage, size, placed);
+      paintProjection(ctx, model, prep, sampled.angles, camera, frontImage, backImage, size, placed, sheetImages);
     }
     for (const fn of listeners) fn(viewState(sampled));
   }
@@ -218,11 +219,22 @@ export function createFoldView(host, model, options = {}) {
 
   function setTextures(frontSource, backSource) {
     debug = false;
+    sheetImages = null;
     return Promise.all([loadSource(frontSource), loadSource(backSource)]).then(([front, back]) => {
       frontImage = front;
       backImage = model.exterior === "painted" ? mirrorSource(front) : back;
       apply();
     });
+  }
+
+  function setAssemblyTextures(map) {
+    debug = false;
+    const next = {};
+    for (const [id, front] of Object.entries(map || {})) {
+      next[id] = { front, back: model.exterior === "painted" ? mirrorSource(front) : front };
+    }
+    sheetImages = next;
+    apply();
   }
 
   apply();
@@ -254,6 +266,10 @@ export function createFoldView(host, model, options = {}) {
       apply();
     },
     setTextures,
+    setAssemblyTextures,
+    getTextures() {
+      return sheetImages;
+    },
     getState() {
       return viewState(state());
     },

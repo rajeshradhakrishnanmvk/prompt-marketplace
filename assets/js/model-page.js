@@ -45,3 +45,12 @@ next.addEventListener("click", () => {
 document.querySelectorAll(".step-diagram").forEach((svg) => {
   drawStepDiagram(svg, model, Number(svg.dataset.step));
 });
+
+const lightDay = document.querySelector("[data-lightday]");
+if (lightDay) {
+  const passed = Date.now() >= Date.parse("2026-11-18T10:16:07Z");
+  const before = lightDay.querySelector("[data-before]");
+  const after = lightDay.querySelector("[data-after]");
+  if (before) before.hidden = passed;
+  if (after) after.hidden = !passed;
+}
