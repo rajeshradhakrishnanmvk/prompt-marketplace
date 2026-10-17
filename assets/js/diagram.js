@@ -14,6 +14,7 @@ export function drawStepDiagram(svg, model, stepIndex) {
     perspective: (model.camera && model.camera.perspective) || 980,
   };
   const polys = projectPolygons(model, prep, sampled.angles, camera, 100);
+  if (model.shape === "net") fitDiagram(polys);
   const moving = new Set((step.moves || []).map((m) => m.flap));
   const ns = "http://www.w3.org/2000/svg";
   svg.setAttribute("viewBox", "-28 -28 156 156");
@@ -32,5 +33,32 @@ export function drawStepDiagram(svg, model, stepIndex) {
     node.setAttribute("stroke", moving.has(poly.flapId) ? "#9f2a1c" : "#1d1a16");
     node.setAttribute("stroke-width", moving.has(poly.flapId) ? "1.4" : "0.6");
     svg.append(node);
+  }
+}
+
+function fitDiagram(polys) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const poly of polys) {
+    for (const p of poly.pts) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+  }
+  if (!Number.isFinite(minX)) return;
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const scale = Math.min(84 / bw, 84 / bh);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  for (const poly of polys) {
+    for (const p of poly.pts) {
+      p.x = 50 + (p.x - cx) * scale;
+      p.y = 50 + (p.y - cy) * scale;
+    }
   }
 }

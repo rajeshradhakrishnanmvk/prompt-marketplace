@@ -25,7 +25,7 @@ function packHex(hex) {
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
   const b = n & 255;
-  return (255 << 24) | (b << 16) | (g << 8) | r;
+  return ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
 }
 
 function floodFill(ctx, x, y, hex) {
@@ -35,23 +35,30 @@ function floodFill(ctx, x, y, hex) {
   const i32 = new Uint32Array(img.data.buffer);
   const sx = clamp(x | 0, 0, w - 1);
   const sy = clamp(y | 0, 0, h - 1);
-  const target = i32[sy * w + sx];
+  const target = i32[sy * w + sx] >>> 0;
   const repl = packHex(hex);
   if (target === repl) return;
   const stack = [sx, sy];
-  while (stack.length) {
+  let budget = w * h;
+  while (stack.length && budget > 0) {
     const py = stack.pop();
     const px = stack.pop();
     if (py < 0 || py >= h || px < 0 || px >= w) continue;
-    if (i32[py * w + px] !== target) continue;
+    if ((i32[py * w + px] >>> 0) !== target) continue;
     let left = px;
     let right = px;
-    while (left > 0 && i32[py * w + left - 1] === target) left -= 1;
-    while (right < w - 1 && i32[py * w + right + 1] === target) right += 1;
-    for (let x2 = left; x2 <= right; x2 += 1) {
+    while (left > 0 && (i32[py * w + left - 1] >>> 0) === target) left -= 1;
+    while (right < w - 1 && (i32[py * w + right + 1] >>> 0) === target) right += 1;
+    for (let x2 = left; x2 <= right && budget > 0; x2 += 1) {
+      budget -= 1;
       i32[py * w + x2] = repl;
-      if (py > 0 && i32[(py - 1) * w + x2] === target) stack.push(x2, py - 1);
-      if (py < h - 1 && i32[(py + 1) * w + x2] === target) stack.push(x2, py + 1);
+      if ((i32[py * w + x2] >>> 0) === target) {
+        ctx.putImageData(img, 0, 0);
+        return;
+      }
+      if (stack.length >= w * h) continue;
+      if (py > 0 && (i32[(py - 1) * w + x2] >>> 0) === target) stack.push(x2, py - 1);
+      if (py < h - 1 && (i32[(py + 1) * w + x2] >>> 0) === target) stack.push(x2, py + 1);
     }
   }
   ctx.putImageData(img, 0, 0);
@@ -112,6 +119,30 @@ export function createPaint(frontCanvas, backCanvas) {
   };
   let snapshot = null;
   let current = null;
+  let sheet = null;
+
+  function traceSheet(g) {
+    g.beginPath();
+    sheet.forEach(([x, y], i) => {
+      const px = x * 1024;
+      const py = y * 1024;
+      if (i) g.lineTo(px, py);
+      else g.moveTo(px, py);
+    });
+    g.closePath();
+  }
+
+  function clipped(g, fn) {
+    if (!sheet || sheet.length < 3) {
+      fn();
+      return;
+    }
+    g.save();
+    traceSheet(g);
+    g.clip();
+    fn();
+    g.restore();
+  }
 
   function paperHex(side) {
     return PAPER[side];
@@ -124,11 +155,34 @@ export function createPaint(frontCanvas, backCanvas) {
   }
 
   function fillPaper(side) {
-    ctx[side].fillStyle = paperHex(side);
-    ctx[side].fillRect(0, 0, 1024, 1024);
+    const g = ctx[side];
+    if (!sheet) {
+      g.fillStyle = paperHex(side);
+      g.fillRect(0, 0, 1024, 1024);
+      return;
+    }
+    g.clearRect(0, 0, 1024, 1024);
+    clipped(g, () => {
+      g.fillStyle = paperHex(side);
+      g.fillRect(0, 0, 1024, 1024);
+    });
+  }
+
+  function maskSheet(sideCtx) {
+    sideCtx.save();
+    sideCtx.globalCompositeOperation = "destination-in";
+    traceSheet(sideCtx);
+    sideCtx.fillStyle = "#000";
+    sideCtx.fill();
+    sideCtx.restore();
   }
 
   function drawStroke(sideCtx, stroke) {
+    clipped(sideCtx, () => drawStrokeBody(sideCtx, stroke));
+    if (sheet && stroke.tool === "fill") maskSheet(sideCtx);
+  }
+
+  function drawStrokeBody(sideCtx, stroke) {
     const color = resolve(stroke);
     if (stroke.tool === "clear") return;
     if (stroke.tool === "fill") {
@@ -241,7 +295,8 @@ export function createPaint(frontCanvas, backCanvas) {
       replay();
     },
     clear() {
-      commit(strokes.concat([{ tool: "clear", size: 0, symmetry: "none", side: tool.side, color: 0 }]));
+      const side = tool.side;
+      commit(strokes.filter((s) => s.side !== side));
     },
     surprise() {
       commit(strokes.concat(surpriseStrokes(tool.side)));
@@ -264,6 +319,10 @@ export function createPaint(frontCanvas, backCanvas) {
       await drawUrl(ctx.back, backUrl);
     },
     replay,
+    setSheet(next) {
+      sheet = next && next.length >= 3 ? next : null;
+      replay();
+    },
   };
 }
 

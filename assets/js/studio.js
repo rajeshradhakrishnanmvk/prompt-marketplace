@@ -1,6 +1,6 @@
 import { createFoldView, blankPaper, reducedMotion } from "./fold-view.js";
 import { createPaint, PALETTE } from "./paint.js";
-import { encodePayload, decodePayload, rasterToken, rasterCanvases } from "./codec.js";
+import { SHARE_LIMIT, encodePayload, decodePayload, rasterCanvases } from "./codec.js";
 import { renderCard, recordFold } from "./export.js";
 
 const base = document.documentElement.dataset.base || "";
@@ -89,6 +89,12 @@ function showCreases() {
     mid.setAttribute("class", "guide");
     creaseSvg.append(mid);
   }
+  if (model && model.sheet && model.sheet.length >= 3) {
+    const outline = document.createElementNS(ns, "polygon");
+    outline.setAttribute("points", model.sheet.map(([x, y]) => `${x * 100},${y * 100}`).join(" "));
+    outline.setAttribute("class", "net-outline");
+    creaseSvg.append(outline);
+  }
   creaseSvg.classList.toggle("is-off", !paint.tool.creases);
 }
 
@@ -120,6 +126,7 @@ function syncTools() {
   document.getElementById("undo-btn").disabled = !paint.canUndo();
   document.getElementById("redo-btn").disabled = !paint.canRedo();
   showCreases();
+  measureLink();
 }
 
 function selectModel(id, { push = true } = {}) {
@@ -129,7 +136,11 @@ function selectModel(id, { push = true } = {}) {
   titleEl.textContent = (data && data.dataset.name) || models[id].name;
   noteEl.textContent = (data && data.dataset.note) || models[id].note || "";
   noteEl.hidden = !noteEl.textContent;
+  const net = models[id].shape === "net";
+  paper.classList.toggle("is-net", net);
+  paint.setSheet(net ? models[id].sheet : null);
   choices.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.model === id)));
+  revealChoice(id);
   showCreases();
   syncTools();
   if (push) writeHash(false, null, true);
@@ -153,23 +164,76 @@ function routeFromLocation() {
   if (id !== modelId) selectModel(id, { push: false });
 }
 
-let shareSimplified = false;
 let shareTooDetailed = false;
+let linkFill = 0;
+let linkJump = 0;
+let linkTicket = 0;
+const LINK_WARN_AT = 0.7;
+const LINK_JUMP_AT = 0.15;
+const LINK_JUMP_FLOOR = 0.6;
+
+function revealChoice(id) {
+  const chosen = choices.find((b) => b.dataset.model === id);
+  if (!chosen) return;
+  const scroller = chosen.parentElement;
+  if (!scroller) return;
+  const left = chosen.offsetLeft;
+  const right = left + chosen.offsetWidth;
+  if (left < scroller.scrollLeft) scroller.scrollLeft = Math.max(0, left - 8);
+  else if (right > scroller.scrollLeft + scroller.clientWidth) scroller.scrollLeft = right - scroller.clientWidth + 8;
+}
+
+function nearLinkLimit() {
+  return linkFill >= LINK_WARN_AT || (linkJump > LINK_JUMP_AT && linkFill >= LINK_JUMP_FLOOR);
+}
+
+function updateLinkWarn() {
+  const el = document.getElementById("stroke-warn");
+  const over = linkFill > 1;
+  el.hidden = !over && !nearLinkLimit();
+  el.textContent = over
+    ? "This painting is too detailed to share as a link. Download a picture or a video instead."
+    : "This painting is getting close to the size limit for a share link.";
+}
+
+function applyLinkSize(packed, priorLength) {
+  linkFill = packed.length / SHARE_LIMIT;
+  linkJump = Math.max(0, packed.length - priorLength) / SHARE_LIMIT;
+  updateLinkWarn();
+}
+
+function measureLink() {
+  const ticket = ++linkTicket;
+  const strokes = paint.getStrokes();
+  if (!strokes.some((s) => s.tool !== "clear")) {
+    linkFill = 0;
+    linkJump = 0;
+    updateLinkWarn();
+    return;
+  }
+  const prior = strokes.slice(0, -1);
+  Promise.all([encodePayload(strokes), prior.length ? encodePayload(prior) : Promise.resolve({ length: 0 })]).then(
+    ([packed, before]) => {
+      if (ticket !== linkTicket) return;
+      applyLinkSize(packed, before.length);
+    }
+  );
+}
 
 async function ensureToken() {
   shareTooDetailed = false;
-  if (raster) {
-    shareSimplified = raster.token[0] === "j" || raster.token[0] === "p";
-    return raster.token;
-  }
+  if (raster) return raster.token;
   const strokes = paint.getStrokes();
-  const packed = await encodePayload(strokes, () => rasterToken(frontCanvas, backCanvas));
+  const prior = strokes.slice(0, -1);
+  const [packed, before] = await Promise.all([
+    encodePayload(strokes),
+    prior.length ? encodePayload(prior) : Promise.resolve({ length: 0 }),
+  ]);
+  applyLinkSize(packed, before.length);
   if (packed.tooDetailed || !packed.token) {
     shareTooDetailed = true;
-    shareSimplified = false;
     return null;
   }
-  shareSimplified = Boolean(packed.simplified);
   return packed.token;
 }
 
@@ -177,12 +241,14 @@ function shareMessage(copied) {
   if (shareTooDetailed) {
     return "This painting is too detailed to share as a link. Download a picture or a video instead.";
   }
-  if (shareSimplified) {
-    return copied
-      ? "Link copied. The shared copy is simplified so the link stays short."
-      : "The shared copy is simplified so the link stays short.";
-  }
+  if (!copied && nearLinkLimit()) return "This painting is getting close to the size limit for a share link.";
   return copied ? "Link copied! Paste it anywhere to share." : "";
+}
+
+function syncShareActions() {
+  document.getElementById("copy-link").hidden = shareTooDetailed;
+  if (shareTooDetailed) nativeBtn.hidden = true;
+  else if (navigator.share) nativeBtn.hidden = false;
 }
 
 function mountFold(autoplay) {
@@ -198,7 +264,8 @@ function mountFold(autoplay) {
   const reflect = () => {
     const s = view.getState();
     scrub.value = String(Math.round(s.t * 1000));
-    stepLabel.textContent = s.label || "Flat square";
+    const flatWord = models[modelId].shape === "net" ? "Flat net" : "Flat square";
+    stepLabel.textContent = s.label || flatWord;
     stepCount.textContent = `Step ${Math.min(s.stepCount, s.stepIndex + 1)} of ${s.stepCount}`;
     playBtn.setAttribute("aria-pressed", String(s.playing));
     playBtn.textContent = s.playing ? "Pause" : "Play";
@@ -209,6 +276,43 @@ function mountFold(autoplay) {
   playBtn.hidden = reduced;
   nextBtn.hidden = !reduced;
   prevBtn.hidden = !reduced;
+  settleFoldScroll();
+}
+
+/* After Fold, show the model and the scrubber when both fit. Otherwise keep the model fully in view.
+   The Fold button would otherwise pull the page and clip the canvas. */
+function settleFoldScroll() {
+  if (!window.matchMedia("(max-width: 879px)").matches) return;
+  const root = document.documentElement;
+  const previous = root.style.scrollBehavior;
+  root.style.scrollBehavior = "auto";
+  const place = () => {
+    const btn = document.getElementById("fold-btn");
+    if (btn && document.activeElement === btn) btn.blur();
+    const vh = window.innerHeight;
+    const host = foldHost.getBoundingClientRect();
+    const scrubBox = scrub.getBoundingClientRect();
+    const span = scrubBox.bottom - host.top;
+    let delta = 0;
+    if (span <= vh + 0.5) {
+      if (host.top < 0) delta = host.top;
+      else if (scrubBox.bottom > vh) delta = scrubBox.bottom - vh;
+      else if (scrubBox.top < 0) delta = scrubBox.top;
+    } else if (host.top < 0) {
+      delta = host.top;
+    } else if (host.bottom > vh) {
+      delta = Math.min(host.bottom - vh, Math.max(0, host.top));
+    }
+    if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+  };
+  place();
+  requestAnimationFrame(() => {
+    place();
+    requestAnimationFrame(() => {
+      place();
+      root.style.scrollBehavior = previous;
+    });
+  });
 }
 
 function showPaint() {
@@ -366,6 +470,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
   shareDialog.showModal();
   try {
     const token = await ensureToken();
+    syncShareActions();
     if (!token) {
       shareUrl.value = "";
       setStatus(shareMessage(false));
@@ -373,7 +478,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
     }
     writeHash(true, token);
     shareUrl.value = location.href;
-    if (shareSimplified) setStatus(shareMessage(false));
+    setStatus(shareMessage(false));
   } catch (err) {
     shareUrl.value = location.href;
     setStatus("Couldn't copy the link. Try again, or copy it from the box below.");
@@ -383,6 +488,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
 document.getElementById("copy-link").addEventListener("click", async () => {
   try {
     const token = await ensureToken();
+    syncShareActions();
     if (!token) {
       shareUrl.value = "";
       setStatus(shareMessage(false));
@@ -448,6 +554,7 @@ if (navigator.share) nativeBtn.hidden = false;
 nativeBtn.addEventListener("click", async () => {
   try {
     const token = await ensureToken();
+    syncShareActions();
     if (!token) {
       shareUrl.value = "";
       setStatus(shareMessage(false));
@@ -455,8 +562,9 @@ nativeBtn.addEventListener("click", async () => {
     }
     writeHash(true, token);
     shareUrl.value = location.href;
-    if (shareSimplified) setStatus(shareMessage(false));
-    await navigator.share({ title: `Foldly — ${models[modelId].name}`, text: "Paint a square. Watch it fold.", url: shareUrl.value });
+    setStatus(shareMessage(false));
+    const blurb = models[modelId].shape === "net" ? "Paint a net. Watch it fold." : "Paint a square. Watch it fold.";
+    await navigator.share({ title: `Foldly — ${models[modelId].name}`, text: blurb, url: shareUrl.value });
   } catch (err) {
     if (err && err.name === "AbortError") return;
     setStatus("Couldn't copy the link. Try again, or copy it from the box below.");

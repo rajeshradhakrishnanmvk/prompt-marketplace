@@ -20,6 +20,7 @@ needs_models: true
 <div class="model-grid">
   {% assign models = site.models | sort: "order" %}
   {% for m in models %}
+  {% unless m.shelf == "paper" %}
   <article class="model-card">
     {% include model-icon.html id=m.model_id %}
     <h2><a href="{{ site.baseurl }}{{ m.url }}">{{ m.card_name }}</a></h2>
@@ -30,6 +31,26 @@ needs_models: true
       <a class="btn" href="{{ site.baseurl }}{{ m.url }}">Steps</a>
     </div>
   </article>
+  {% endunless %}
+  {% endfor %}
+</div>
+
+<h2 class="section-title" id="paper-models">Paper models 🛰️</h2>
+<p class="section-note">A fold-up net, not a square of origami. Each face turns on one hinge.</p>
+<div class="model-grid shelf-grid">
+  {% for m in models %}
+  {% if m.shelf == "paper" %}
+  <article class="model-card">
+    {% include model-icon.html id=m.model_id %}
+    <h2><a href="{{ site.baseurl }}{{ m.url }}">{{ m.card_name }}</a></h2>
+    <p class="meta">{{ m.difficulty_label }} · {{ m.time_label }}</p>
+    <p>{{ m.card }}</p>
+    <div class="card-links">
+      <a class="btn primary" href="{{ site.baseurl }}/fold/#m={{ m.model_id }}">Paint this</a>
+      <a class="btn" href="{{ site.baseurl }}{{ m.url }}">Steps</a>
+    </div>
+  </article>
+  {% endif %}
   {% endfor %}
 </div>
 <script type="module" src="{{ site.baseurl }}/assets/js/home.js"></script>

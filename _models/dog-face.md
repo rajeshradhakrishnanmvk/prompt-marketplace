@@ -13,6 +13,8 @@ time_label: "about 3 minutes"
 total_time: PT3M
 card: "Floppy ears and a friendly snout."
 materials: "One square of paper, 15 × 15 cm (6 × 6 in), plus a marker."
+jsonld_supplies:
+  - "One square of paper, 15 × 15 cm (6 × 6 in), plus a marker."
 teacher_note: "Because it has so few steps, this model is good for the youngest classes and for kids folding for the first time. Have pupils compare it with the cat face to spot which steps are the same and which are different."
 steps:
   - text: "Turn the square so it looks like a diamond. Fold the top corner down to the bottom corner to make a triangle."
