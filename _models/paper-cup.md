@@ -13,6 +13,8 @@ time_label: "about 3–5 minutes"
 total_time: PT5M
 card: "A few folds, then it opens into a cup."
 materials: "One square of paper, 15 × 15 cm (6 × 6 in). Foil paper holds water a bit longer."
+jsonld_supplies:
+  - "One square of paper, 15 × 15 cm (6 × 6 in). Foil paper holds water a bit longer."
 teacher_note: "This is a good first fold for a whole class because each step has one clear target. Show the \"flap goes straight across\" check in step 2, since that's where most cups go wrong. Use it as a reminder that water slowly soaks into paper."
 steps:
   - text: "Fold the square in half corner to corner to make a triangle."

@@ -360,6 +360,30 @@ dialog h2 { font-family: var(--serif); margin: 0 0 8px; }
   flex: 0 0 44px;
   accent-color: var(--indigo);
 }
+.count-optout.is-locked {
+  margin-bottom: 4px;
+  color: var(--ink);
+  cursor: not-allowed;
+}
+.count-optout.is-locked input:disabled {
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 1;
+  cursor: not-allowed;
+  border: 3px solid #243056;
+  border-radius: 10px;
+  background-color: #243056;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23fffaf3' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 26px 26px;
+}
+.count-optout-note {
+  margin: 0 0 12px;
+  color: #1c1915;
+  font-size: 1rem;
+  line-height: 1.45;
+}
 .about, .faq { max-width: 44rem; }
 .about h1, .faq h1 { font-family: var(--serif); font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -0.03em; }
 .faq details { background: var(--card); border-radius: 12px; padding: 8px 14px; margin: 8px 0; }

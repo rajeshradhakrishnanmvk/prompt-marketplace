@@ -34,9 +34,10 @@ body_class: faq
   <details>
     <summary>Does Foldly count visits?</summary>
     <p>Foldly counts visits with a small counter on our own server (stats.srv1536099.hstgr.cloud). Each page view sends the page path, the referring site (domain only), any utm tags and your screen width. No cookies, no IP addresses stored, no ad or analytics companies. Do Not Track and Global Privacy Control are respected, or switch off counting below.</p>
-    <label class="count-optout">
-      <input type="checkbox" data-no-count role="switch" aria-checked="false">
+    <label class="count-optout" for="foldly-no-count">
+      <input id="foldly-no-count" type="checkbox" data-no-count role="switch" aria-checked="false">
       Don't count my visits
     </label>
+    <p id="foldly-privacy-note" class="count-optout-note" hidden>Your browser's privacy setting already turns counting off.</p>
   </details>
 </article>

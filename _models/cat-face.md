@@ -13,6 +13,8 @@ time_label: "under 5 minutes"
 total_time: PT5M
 card: "Pointy ears and a face you draw yourself."
 materials: "One square of paper, 15 × 15 cm (6 × 6 in), plus a marker for the face."
+jsonld_supplies:
+  - "One square of paper, 15 × 15 cm (6 × 6 in), plus a marker for the face."
 teacher_note: "Kids can change the ear angle in step 3 to turn the cat into a fox or a bear, which works well for comparing shapes. Have markers ready for the drawing at the end."
 steps:
   - text: "Fold the square in half corner to corner to make a triangle."

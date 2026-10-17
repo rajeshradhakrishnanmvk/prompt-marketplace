@@ -31,8 +31,11 @@
     "name": {{ page.seo_title | jsonify }},
     "description": {{ page.description | jsonify }},
     "totalTime": {{ page.total_time | jsonify }},
-    {% assign supply_name = page.materials | replace: " The printable net prints on page 2.", "" %}
-    "supply": [{ "@type": "HowToSupply", "name": {{ supply_name | jsonify }} }],
+    "supply": [
+      {% for item in page.jsonld_supplies %}
+      { "@type": "HowToSupply", "name": {{ item | jsonify }} }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ],
     {% assign paper_tool = page.paper_tool | default: "One square of paper" %}
     "tool": [{ "@type": "HowToTool", "name": {{ paper_tool | jsonify }} }],
     "step": [
@@ -63,12 +66,36 @@
   <script>
   (function () {
     var key = 'foldly-no-count';
+    function flagOn(value) {
+      return value === '1' || value === 'yes';
+    }
+    function privacyOn() {
+      return flagOn(navigator.doNotTrack) || flagOn(window.doNotTrack) || flagOn(navigator.msDoNotTrack) || navigator.globalPrivacyControl === true;
+    }
     function optedOut() {
       try { return localStorage.getItem(key) === '1'; } catch (e) { return false; }
     }
+    var privacy = privacyOn();
     var boxes = document.querySelectorAll('[data-no-count]');
     for (var i = 0; i < boxes.length; i++) {
       (function (box) {
+        var label = box.closest ? box.closest('label') : box.parentNode;
+        var note = label && label.nextElementSibling && label.nextElementSibling.classList.contains('count-optout-note')
+          ? label.nextElementSibling
+          : null;
+        if (privacy) {
+          box.checked = true;
+          box.disabled = true;
+          box.tabIndex = -1;
+          box.setAttribute('aria-checked', 'true');
+          box.setAttribute('aria-disabled', 'true');
+          if (label && label.classList) label.classList.add('is-locked');
+          if (note) {
+            note.hidden = false;
+            box.setAttribute('aria-describedby', note.id);
+          }
+          return;
+        }
         var on = optedOut();
         box.checked = on;
         box.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -81,7 +108,7 @@
         });
       })(boxes[i]);
     }
-    if (navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.msDoNotTrack === 'yes' || navigator.globalPrivacyControl === true || !navigator.sendBeacon) return;
+    if (privacy || !navigator.sendBeacon) return;
     if (optedOut()) return;
     var q = new URLSearchParams(location.search);
     var referrer = '';
