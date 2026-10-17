@@ -170,6 +170,7 @@ let linkJump = 0;
 let linkTicket = 0;
 const LINK_WARN_AT = 0.7;
 const LINK_JUMP_AT = 0.15;
+const LINK_JUMP_FLOOR = 0.6;
 
 function revealChoice(id) {
   const chosen = choices.find((b) => b.dataset.model === id);
@@ -183,7 +184,7 @@ function revealChoice(id) {
 }
 
 function nearLinkLimit() {
-  return linkFill >= LINK_WARN_AT || linkJump > LINK_JUMP_AT;
+  return linkFill >= LINK_WARN_AT || (linkJump > LINK_JUMP_AT && linkFill >= LINK_JUMP_FLOOR);
 }
 
 function updateLinkWarn() {

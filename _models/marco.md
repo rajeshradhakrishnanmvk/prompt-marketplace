@@ -15,7 +15,7 @@ time_label: "about 15–20 minutes"
 total_time: PT20M
 paper_tool: "A sheet of paper, scissors, and a glue stick"
 card: "A fold-up net of a small Mars spacecraft, with two wings."
-materials: "A sheet of paper, scissors, and a glue stick. The printable net is on this page."
+materials: "A sheet of paper, scissors, and a glue stick. The printable net prints on page 2."
 credit: "Reference: NASA/JPL-Caltech. This drawing is Foldly's own. NASA and JPL have not endorsed it."
 teacher_note: "Say out loud that this is a net, not origami, so the class does not expect a square fold. The dashed lines are the hinges. The wings are a stand-in for the solar panels, not a measured copy of them."
 facts:
