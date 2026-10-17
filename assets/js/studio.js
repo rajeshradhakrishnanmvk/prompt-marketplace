@@ -1,6 +1,6 @@
 import { createFoldView, blankPaper, reducedMotion } from "./fold-view.js";
 import { createPaint, PALETTE } from "./paint.js";
-import { encodePayload, decodePayload, rasterCanvases } from "./codec.js";
+import { SHARE_LIMIT, encodePayload, decodePayload, rasterCanvases } from "./codec.js";
 import { renderCard, recordFold } from "./export.js";
 
 const base = document.documentElement.dataset.base || "";
@@ -125,9 +125,8 @@ function syncTools() {
   paper.dataset.side = paint.tool.side;
   document.getElementById("undo-btn").disabled = !paint.canUndo();
   document.getElementById("redo-btn").disabled = !paint.canRedo();
-  const drawn = paint.getStrokes().filter((s) => s.tool !== "clear").length;
-  document.getElementById("stroke-warn").hidden = drawn < 20;
   showCreases();
+  measureLink();
 }
 
 function selectModel(id, { push = true } = {}) {
@@ -141,6 +140,7 @@ function selectModel(id, { push = true } = {}) {
   paper.classList.toggle("is-net", net);
   paint.setSheet(net ? models[id].sheet : null);
   choices.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.model === id)));
+  revealChoice(id);
   showCreases();
   syncTools();
   if (push) writeHash(false, null, true);
@@ -165,12 +165,52 @@ function routeFromLocation() {
 }
 
 let shareTooDetailed = false;
+let linkFill = 0;
+let linkTicket = 0;
+const LINK_WARN_AT = 0.8;
+
+function revealChoice(id) {
+  const chosen = choices.find((b) => b.dataset.model === id);
+  if (!chosen) return;
+  const scroller = chosen.parentElement;
+  if (!scroller) return;
+  const left = chosen.offsetLeft;
+  const right = left + chosen.offsetWidth;
+  if (left < scroller.scrollLeft) scroller.scrollLeft = Math.max(0, left - 8);
+  else if (right > scroller.scrollLeft + scroller.clientWidth) scroller.scrollLeft = right - scroller.clientWidth + 8;
+}
+
+function updateLinkWarn() {
+  const el = document.getElementById("stroke-warn");
+  const over = linkFill > 1;
+  el.hidden = linkFill < LINK_WARN_AT;
+  el.textContent = over
+    ? "This painting is too detailed to share as a link. Download a picture or a video instead."
+    : "This painting is getting close to the size limit for a share link.";
+}
+
+function measureLink() {
+  const ticket = ++linkTicket;
+  const strokes = paint.getStrokes();
+  if (!strokes.some((s) => s.tool !== "clear")) {
+    linkFill = 0;
+    updateLinkWarn();
+    return;
+  }
+  encodePayload(strokes).then((packed) => {
+    if (ticket !== linkTicket) return;
+    linkFill = packed.length / SHARE_LIMIT;
+    updateLinkWarn();
+  });
+}
 
 async function ensureToken() {
   shareTooDetailed = false;
   if (raster) return raster.token;
   const strokes = paint.getStrokes();
   const packed = await encodePayload(strokes);
+  linkFill = packed.length / SHARE_LIMIT;
+  updateLinkWarn();
   if (packed.tooDetailed || !packed.token) {
     shareTooDetailed = true;
     return null;
@@ -182,8 +222,7 @@ function shareMessage(copied) {
   if (shareTooDetailed) {
     return "This painting is too detailed to share as a link. Download a picture or a video instead.";
   }
-  const drawn = paint.getStrokes().filter((s) => s.tool !== "clear").length;
-  if (!copied && drawn >= 20) return "About 20 strokes in. A link holds about 25.";
+  if (!copied && linkFill >= LINK_WARN_AT) return "This painting is getting close to the size limit for a share link.";
   return copied ? "Link copied! Paste it anywhere to share." : "";
 }
 
@@ -468,7 +507,8 @@ nativeBtn.addEventListener("click", async () => {
     writeHash(true, token);
     shareUrl.value = location.href;
     setStatus(shareMessage(false));
-    await navigator.share({ title: `Foldly — ${models[modelId].name}`, text: "Paint a square. Watch it fold.", url: shareUrl.value });
+    const blurb = models[modelId].shape === "net" ? "Paint a net. Watch it fold." : "Paint a square. Watch it fold.";
+    await navigator.share({ title: `Foldly — ${models[modelId].name}`, text: blurb, url: shareUrl.value });
   } catch (err) {
     if (err && err.name === "AbortError") return;
     setStatus("Couldn't copy the link. Try again, or copy it from the box below.");

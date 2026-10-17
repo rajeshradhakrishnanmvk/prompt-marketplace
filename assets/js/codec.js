@@ -231,6 +231,8 @@ async function inflateRaw(bytes) {
   return new Uint8Array(buf);
 }
 
+export const SHARE_LIMIT = 1800;
+
 export async function encodePayload(strokes) {
   const raw = serialize(strokes);
   let token = `r${b64url(raw)}`;
@@ -241,8 +243,9 @@ export async function encodePayload(strokes) {
       token = `r${b64url(raw)}`;
     }
   }
-  if (token.length > 1800) return { token: null, tooDetailed: true };
-  return { token, tooDetailed: false };
+  const length = token.length;
+  if (length > SHARE_LIMIT) return { token: null, tooDetailed: true, length };
+  return { token, tooDetailed: false, length };
 }
 
 export async function decodePayload(token) {

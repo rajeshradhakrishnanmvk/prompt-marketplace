@@ -69,9 +69,11 @@ layout: default
     <h2>Printable net</h2>
     <svg viewBox="0 0 100 100" role="img" aria-label="Net to cut out and glue">
       {% for tab in model.tabs %}
-      <polygon points="{% for p in tab %}{{ p[0] | times: 100 }},{{ p[1] | times: 100 }}{% unless forloop.last %} {% endunless %}{% endfor %}" fill="#f6e2b0" stroke="black" stroke-width="0.35" stroke-dasharray="1.1 0.7"/>
+      {% capture tab_pts %}{% for p in tab %}{{ p[0] | times: 100 }},{{ p[1] | times: 100 }}|{% endfor %}{% endcapture %}
+      <polygon points="{{ tab_pts | split: '|' | join: ' ' }}" fill="#f6e2b0" stroke="black" stroke-width="0.35" stroke-dasharray="1.1 0.7"/>
       {% endfor %}
-      <polygon points="{% for p in model.sheet %}{{ p[0] | times: 100 }},{{ p[1] | times: 100 }}{% unless forloop.last %} {% endunless %}{% endfor %}" fill="white" stroke="black" stroke-width="0.7"/>
+      {% capture sheet_pts %}{% for p in model.sheet %}{{ p[0] | times: 100 }},{{ p[1] | times: 100 }}|{% endfor %}{% endcapture %}
+      <polygon points="{{ sheet_pts | split: '|' | join: ' ' }}" fill="white" stroke="black" stroke-width="0.7"/>
       {% for c in model.creases %}
       <line x1="{{ c[0][0] | times: 100 }}" y1="{{ c[0][1] | times: 100 }}" x2="{{ c[1][0] | times: 100 }}" y2="{{ c[1][1] | times: 100 }}" stroke="black" stroke-width="0.4" stroke-dasharray="1.6 0.9" fill="none"/>
       {% endfor %}

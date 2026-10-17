@@ -7,6 +7,7 @@ card_name: MarCO
 picker: MarCO
 studio_note: "A paper model of a 6U CubeSat. This is a net, not a fold from one square. The wings stand in for the solar panels."
 seo_title: "MarCO paper model: fold a CubeSat net"
+og_image: /assets/img/og-marco.png
 description: "Paint and fold a paper net of NASA's Mars Cube One CubeSat. The drawing is Foldly's own. NASA and JPL have not endorsed it."
 intro: "This is a paper model (net) of NASA's Mars Cube One, not a square origami fold. The box follows the spacecraft's stowed proportions. The wings stand in for the solar panels, and the lid stands in for the flat high-gain antenna."
 difficulty_label: Medium
@@ -31,7 +32,7 @@ facts:
 steps:
   - text: "Fold the four walls up so they stand around the floor."
     tip: "All four walls move in this one step. Each turns on a single hinge."
-  - text: "Fold the lid over the top. The flat patch on the lid stands in for the high-gain antenna."
+  - text: "Fold the lid over the top. The lid stands in for the flat high-gain antenna."
   - text: "Swing the two wings out. On the real spacecraft, these are the solar panels."
     tip: "The wings are a simplified stand-in. Their size is not a measured copy of the real panels."
   - text: "Turn the finished paper model."

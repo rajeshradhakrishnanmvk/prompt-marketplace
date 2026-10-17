@@ -177,7 +177,8 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
   min-height: 100%;
 }
 .model-card h2 { font-family: var(--serif); font-size: 1.45rem; margin: 0; }
-.model-card h2 a { display: inline-flex; align-items: center; min-height: 24px; }
+.model-card h2 a { display: inline-flex; align-items: center; min-height: 44px; }
+.shelf-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 320px)); }
 .model-card p { margin: 0; line-height: 1.4; }
 .model-card .meta { color: #5c5348; font-size: 0.92rem; }
 .credit { color: #5c5348; max-width: 62ch; }
@@ -363,9 +364,9 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
   .transport { padding-bottom: 8px; }
   body.studio main { padding-bottom: 12px; }
   body.studio .paper,
-  body.studio .fold-host { width: min(100%, max(260px, calc(100dvh - 530px))); }
+  body.studio .fold-host { width: min(100%, max(148px, calc(100dvh - 560px))); }
   .studio-app { display: flex; flex-direction: column; }
-  .model-picker { order: 1; }
+  .model-picker { order: 1; flex-wrap: wrap; overflow-x: visible; }
   .paper-wrap, .fold-column { order: 2; }
   .fold-bar { order: 3; }
   .toolbar { order: 4; }

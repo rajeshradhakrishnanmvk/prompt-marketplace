@@ -288,7 +288,8 @@ export function createPaint(frontCanvas, backCanvas) {
       replay();
     },
     clear() {
-      commit(strokes.concat([{ tool: "clear", size: 0, symmetry: "none", side: tool.side, color: 0 }]));
+      const side = tool.side;
+      commit(strokes.filter((s) => s.side !== side));
     },
     surprise() {
       commit(strokes.concat(surpriseStrokes(tool.side)));

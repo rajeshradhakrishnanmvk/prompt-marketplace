@@ -68,7 +68,8 @@ export function renderCard(model, angles, camera, front, back) {
   wrapText(g, model.name, 56, 200, 420, 66);
   g.font = "400 26px Georgia, serif";
   g.fillStyle = "#f6e2b0";
-  wrapText(g, "Paint a square. Watch it fold.", 56, 470, 420, 34);
+  const blurb = model.shape === "net" ? "Paint a net. Watch it fold." : "Paint a square. Watch it fold.";
+  wrapText(g, blurb, 56, 470, 420, 34);
   drawFold(g, model, prep, angles, camera, front, back, 520, 620, 55);
   return card;
 }

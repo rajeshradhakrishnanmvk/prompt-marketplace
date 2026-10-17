@@ -189,28 +189,45 @@ export function paintProjection(ctx, model, prep, angles, camera, front, back, s
   }));
   const w = front.width || 1024;
   const h = front.height || 1024;
-  for (const tri of tris) {
+  const drawTri = (tri) => {
     const image = tri.facing >= 0 ? front : back;
     const uv = (p) => ({
       x: (tri.facing >= 0 ? p.u : 1 - p.u) * w,
       y: p.v * h,
     });
     drawTexturedTriangle(ctx, image, uv(tri.p0), uv(tri.p1), uv(tri.p2), tri.p0, tri.p1, tri.p2);
-  }
+  };
   ctx.save();
   ctx.strokeStyle = "rgba(28, 24, 18, 0.45)";
   ctx.lineWidth = Math.max(1, size / 280);
   ctx.lineJoin = "round";
-  const seen = new Set();
-  for (const tri of tris) {
-    if (seen.has(tri.flapId)) continue;
-    seen.add(tri.flapId);
+  if (model.shape !== "net") {
+    for (const tri of tris) drawTri(tri);
+    for (const tri of tris) {
+      ctx.beginPath();
+      ctx.moveTo(tri.p0.x, tri.p0.y);
+      ctx.lineTo(tri.p1.x, tri.p1.y);
+      ctx.lineTo(tri.p2.x, tri.p2.y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
   }
+  const faces = projectPolygons(model, prep, angles, camera, size).map((poly) => ({
+    ...poly,
+    pts: poly.pts.map((p) => movePoint(p, fit)),
+  }));
+  const byFlap = new Map();
   for (const tri of tris) {
+    if (!byFlap.has(tri.flapId)) byFlap.set(tri.flapId, []);
+    byFlap.get(tri.flapId).push(tri);
+  }
+  for (const face of faces) {
+    for (const tri of byFlap.get(face.flapId) || []) drawTri(tri);
+    if (face.pts.length < 2) continue;
     ctx.beginPath();
-    ctx.moveTo(tri.p0.x, tri.p0.y);
-    ctx.lineTo(tri.p1.x, tri.p1.y);
-    ctx.lineTo(tri.p2.x, tri.p2.y);
+    face.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.closePath();
     ctx.stroke();
   }
