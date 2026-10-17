@@ -88,7 +88,7 @@ const sheet = [
   P(x3, y4), P(x2, y4), P(x2, y2), P(x0, y2), P(x0, y1), P(x2, y1),
 ];
 
-function tab(a, b, dir, depth = 0.022) {
+function tab(a, b, dir, depth = 0.048) {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   const len = Math.hypot(dx, dy) || 1;
@@ -111,6 +111,23 @@ const tabs = [
   tab(P(x4, y1), P(x3, y1), [0, -1]),
   tab(P(x3, y2), P(x4, y2), [0, 1]),
 ];
+
+function printView(polys) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const poly of polys) {
+    for (const p of poly) {
+      if (p[0] < minX) minX = p[0];
+      if (p[1] < minY) minY = p[1];
+      if (p[0] > maxX) maxX = p[0];
+      if (p[1] > maxY) maxY = p[1];
+    }
+  }
+  const pad = 0.012;
+  return [r((minX - pad) * 100), r((minY - pad) * 100), r((maxX - minX + pad * 2) * 100), r((maxY - minY + pad * 2) * 100)];
+}
 
 const model = { flaps, steps: [] };
 
@@ -185,11 +202,12 @@ const out = {
   name: "MarCO",
   shape: "net",
   difficulty: 2,
-  note: "A paper model of a 6U CubeSat. This is a net, not a fold from one square. The wings stand in for the solar panels.",
+  note: "A 6U CubeSat net, not a square fold. The wings stand in for the solar panels.",
   exterior: "painted",
   credit: "Reference: NASA/JPL-Caltech. This drawing is Foldly's own. NASA and JPL have not endorsed it.",
   camera: { rx: -38, ry: 32, rz: 0, perspective: 1200 },
   sheet: sheet.map((p) => P(p[0], p[1])),
+  print_view: printView([sheet, ...tabs]),
   tabs,
   flaps,
   creases,

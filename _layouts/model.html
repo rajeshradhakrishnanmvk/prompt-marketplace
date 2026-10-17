@@ -65,15 +65,20 @@ layout: default
   <p class="cta-row no-print"><a class="btn primary xl" href="{{ site.baseurl }}/fold/#m={{ page.model_id }}">Paint yours online</a></p>
 
   {% if model.sheet %}
-  <section class="print-only crease-wrap">
+  <section class="print-only crease-wrap is-net">
     <h2>Printable net</h2>
-    <svg viewBox="0 0 100 100" role="img" aria-label="Net to cut out and glue">
+    <svg viewBox="{% if model.print_view %}{{ model.print_view | join: ' ' }}{% else %}0 0 100 100{% endif %}" role="img" aria-label="Net to cut out and glue">
       {% for tab in model.tabs %}
       {% capture tab_pts %}{% for p in tab %}{{ p[0] | times: 100 }},{{ p[1] | times: 100 }}|{% endfor %}{% endcapture %}
-      <polygon points="{{ tab_pts | split: '|' | join: ' ' }}" fill="#f6e2b0" stroke="black" stroke-width="0.35" stroke-dasharray="1.1 0.7"/>
+      <polygon points="{{ tab_pts | split: '|' | join: ' ' }}" fill="#f6e2b0" stroke="none"/>
       {% endfor %}
       {% capture sheet_pts %}{% for p in model.sheet %}{{ p[0] | times: 100 }},{{ p[1] | times: 100 }}|{% endfor %}{% endcapture %}
-      <polygon points="{{ sheet_pts | split: '|' | join: ' ' }}" fill="white" stroke="black" stroke-width="0.7"/>
+      <polygon points="{{ sheet_pts | split: '|' | join: ' ' }}" fill="white" stroke="black" stroke-width="0.7" stroke-linejoin="miter"/>
+      {% for tab in model.tabs %}
+      <line x1="{{ tab[0][0] | times: 100 }}" y1="{{ tab[0][1] | times: 100 }}" x2="{{ tab[1][0] | times: 100 }}" y2="{{ tab[1][1] | times: 100 }}" stroke="white" stroke-width="1.4" stroke-linecap="butt"/>
+      <polyline points="{{ tab[1][0] | times: 100 }},{{ tab[1][1] | times: 100 }} {{ tab[2][0] | times: 100 }},{{ tab[2][1] | times: 100 }} {{ tab[3][0] | times: 100 }},{{ tab[3][1] | times: 100 }} {{ tab[0][0] | times: 100 }},{{ tab[0][1] | times: 100 }}" fill="none" stroke="black" stroke-width="0.7" stroke-linejoin="miter" stroke-linecap="square"/>
+      <line x1="{{ tab[0][0] | times: 100 }}" y1="{{ tab[0][1] | times: 100 }}" x2="{{ tab[1][0] | times: 100 }}" y2="{{ tab[1][1] | times: 100 }}" stroke="black" stroke-width="0.4" stroke-dasharray="1.6 0.9"/>
+      {% endfor %}
       {% for c in model.creases %}
       <line x1="{{ c[0][0] | times: 100 }}" y1="{{ c[0][1] | times: 100 }}" x2="{{ c[1][0] | times: 100 }}" y2="{{ c[1][1] | times: 100 }}" stroke="black" stroke-width="0.4" stroke-dasharray="1.6 0.9" fill="none"/>
       {% endfor %}

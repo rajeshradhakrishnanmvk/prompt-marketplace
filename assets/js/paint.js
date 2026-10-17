@@ -25,7 +25,7 @@ function packHex(hex) {
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
   const b = n & 255;
-  return (255 << 24) | (b << 16) | (g << 8) | r;
+  return ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
 }
 
 function floodFill(ctx, x, y, hex) {
@@ -35,23 +35,30 @@ function floodFill(ctx, x, y, hex) {
   const i32 = new Uint32Array(img.data.buffer);
   const sx = clamp(x | 0, 0, w - 1);
   const sy = clamp(y | 0, 0, h - 1);
-  const target = i32[sy * w + sx];
+  const target = i32[sy * w + sx] >>> 0;
   const repl = packHex(hex);
   if (target === repl) return;
   const stack = [sx, sy];
-  while (stack.length) {
+  let budget = w * h;
+  while (stack.length && budget > 0) {
     const py = stack.pop();
     const px = stack.pop();
     if (py < 0 || py >= h || px < 0 || px >= w) continue;
-    if (i32[py * w + px] !== target) continue;
+    if ((i32[py * w + px] >>> 0) !== target) continue;
     let left = px;
     let right = px;
-    while (left > 0 && i32[py * w + left - 1] === target) left -= 1;
-    while (right < w - 1 && i32[py * w + right + 1] === target) right += 1;
-    for (let x2 = left; x2 <= right; x2 += 1) {
+    while (left > 0 && (i32[py * w + left - 1] >>> 0) === target) left -= 1;
+    while (right < w - 1 && (i32[py * w + right + 1] >>> 0) === target) right += 1;
+    for (let x2 = left; x2 <= right && budget > 0; x2 += 1) {
+      budget -= 1;
       i32[py * w + x2] = repl;
-      if (py > 0 && i32[(py - 1) * w + x2] === target) stack.push(x2, py - 1);
-      if (py < h - 1 && i32[(py + 1) * w + x2] === target) stack.push(x2, py + 1);
+      if ((i32[py * w + x2] >>> 0) === target) {
+        ctx.putImageData(img, 0, 0);
+        return;
+      }
+      if (stack.length >= w * h) continue;
+      if (py > 0 && (i32[(py - 1) * w + x2] >>> 0) === target) stack.push(x2, py - 1);
+      if (py < h - 1 && (i32[(py + 1) * w + x2] >>> 0) === target) stack.push(x2, py + 1);
     }
   }
   ctx.putImageData(img, 0, 0);

@@ -105,6 +105,24 @@ export function drawTexturedTriangle(ctx, image, s0, s1, s2, d0, d1, d2) {
   ctx.restore();
 }
 
+function samplePixel(image, u, v) {
+  if (!image || typeof image.getContext !== "function" || !image.width || !image.height) return null;
+  const x = Math.max(0, Math.min(image.width - 1, Math.round(u * (image.width - 1))));
+  const y = Math.max(0, Math.min(image.height - 1, Math.round(v * (image.height - 1))));
+  const px = image.getContext("2d").getImageData(x, y, 1, 1).data;
+  if (px[3] < 8) return null;
+  return `${px[0]},${px[1]},${px[2]}`;
+}
+
+/** Colour of a fan diagonal when the whole triangle is one solid paint colour. */
+function solidSeamColor(image, tri) {
+  const at = (u, v) => samplePixel(image, tri.facing >= 0 ? u : 1 - u, v);
+  const mid = at((tri.p0.u + tri.p2.u) / 2, (tri.p0.v + tri.p2.v) / 2);
+  const colors = [at(tri.p0.u, tri.p0.v), at(tri.p1.u, tri.p1.v), at(tri.p2.u, tri.p2.v), mid];
+  if (colors.some((c) => !c || c !== colors[0])) return null;
+  return `rgba(${colors[0]},1)`;
+}
+
 function movePoint(p, fit) {
   if (!fit) return p;
   return { ...p, x: p.x * fit.scale + fit.dx, y: p.y * fit.scale + fit.dy };
@@ -224,7 +242,24 @@ export function paintProjection(ctx, model, prep, angles, camera, front, back, s
     byFlap.get(tri.flapId).push(tri);
   }
   for (const face of faces) {
-    for (const tri of byFlap.get(face.flapId) || []) drawTri(tri);
+    const faceTris = byFlap.get(face.flapId) || [];
+    for (const tri of faceTris) drawTri(tri);
+    if (faceTris.length > 1) {
+      const seam = Math.max(1.5, size / 200);
+      for (const tri of faceTris) {
+        const color = solidSeamColor(tri.facing >= 0 ? front : back, tri);
+        if (!color) continue;
+        ctx.beginPath();
+        ctx.moveTo(tri.p0.x, tri.p0.y);
+        ctx.lineTo(tri.p2.x, tri.p2.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = seam;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(28, 24, 18, 0.45)";
+      ctx.lineWidth = Math.max(1, size / 280);
+    }
     if (face.pts.length < 2) continue;
     ctx.beginPath();
     face.pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));

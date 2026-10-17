@@ -364,7 +364,14 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
   .transport { padding-bottom: 8px; }
   body.studio main { padding-bottom: 12px; }
   body.studio .paper,
-  body.studio .fold-host { width: min(100%, max(148px, calc(100dvh - 560px))); }
+  body.studio .fold-host { width: min(100%, max(260px, calc(100dvh - 530px))); }
+  body.studio #fold-ui {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    background: rgba(255, 250, 243, 0.96);
+    padding-top: 6px;
+  }
   .studio-app { display: flex; flex-direction: column; }
   .model-picker { order: 1; flex-wrap: wrap; overflow-x: visible; }
   .paper-wrap, .fold-column { order: 2; }
@@ -443,8 +450,10 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
   .tip { font-size: 10pt; margin: 0; }
   .step-diagram { width: 22mm; height: 22mm; float: left; margin: 0 2mm 1mm 0; border-radius: 1mm; }
   .crease-wrap { width: 150mm; margin: 2pt auto 4pt; break-inside: avoid; }
+  .crease-wrap.is-net { width: 100%; max-width: none; margin: 0 auto 2pt; }
   .crease-wrap h2 { font-size: 12pt; margin: 0 0 2pt; text-align: center; }
   .crease-wrap svg { border: 0.4mm solid black; }
+  .crease-wrap.is-net svg { border: 0; }
   .legend { font-size: 10pt; margin: 2pt 0 0; text-align: center; }
   @page { size: A4; margin: 8mm; }
 }

@@ -166,8 +166,10 @@ function routeFromLocation() {
 
 let shareTooDetailed = false;
 let linkFill = 0;
+let linkJump = 0;
 let linkTicket = 0;
-const LINK_WARN_AT = 0.8;
+const LINK_WARN_AT = 0.7;
+const LINK_JUMP_AT = 0.15;
 
 function revealChoice(id) {
   const chosen = choices.find((b) => b.dataset.model === id);
@@ -180,13 +182,23 @@ function revealChoice(id) {
   else if (right > scroller.scrollLeft + scroller.clientWidth) scroller.scrollLeft = right - scroller.clientWidth + 8;
 }
 
+function nearLinkLimit() {
+  return linkFill >= LINK_WARN_AT || linkJump > LINK_JUMP_AT;
+}
+
 function updateLinkWarn() {
   const el = document.getElementById("stroke-warn");
   const over = linkFill > 1;
-  el.hidden = linkFill < LINK_WARN_AT;
+  el.hidden = !over && !nearLinkLimit();
   el.textContent = over
     ? "This painting is too detailed to share as a link. Download a picture or a video instead."
     : "This painting is getting close to the size limit for a share link.";
+}
+
+function applyLinkSize(packed, priorLength) {
+  linkFill = packed.length / SHARE_LIMIT;
+  linkJump = Math.max(0, packed.length - priorLength) / SHARE_LIMIT;
+  updateLinkWarn();
 }
 
 function measureLink() {
@@ -194,23 +206,29 @@ function measureLink() {
   const strokes = paint.getStrokes();
   if (!strokes.some((s) => s.tool !== "clear")) {
     linkFill = 0;
+    linkJump = 0;
     updateLinkWarn();
     return;
   }
-  encodePayload(strokes).then((packed) => {
-    if (ticket !== linkTicket) return;
-    linkFill = packed.length / SHARE_LIMIT;
-    updateLinkWarn();
-  });
+  const prior = strokes.slice(0, -1);
+  Promise.all([encodePayload(strokes), prior.length ? encodePayload(prior) : Promise.resolve({ length: 0 })]).then(
+    ([packed, before]) => {
+      if (ticket !== linkTicket) return;
+      applyLinkSize(packed, before.length);
+    }
+  );
 }
 
 async function ensureToken() {
   shareTooDetailed = false;
   if (raster) return raster.token;
   const strokes = paint.getStrokes();
-  const packed = await encodePayload(strokes);
-  linkFill = packed.length / SHARE_LIMIT;
-  updateLinkWarn();
+  const prior = strokes.slice(0, -1);
+  const [packed, before] = await Promise.all([
+    encodePayload(strokes),
+    prior.length ? encodePayload(prior) : Promise.resolve({ length: 0 }),
+  ]);
+  applyLinkSize(packed, before.length);
   if (packed.tooDetailed || !packed.token) {
     shareTooDetailed = true;
     return null;
@@ -222,7 +240,7 @@ function shareMessage(copied) {
   if (shareTooDetailed) {
     return "This painting is too detailed to share as a link. Download a picture or a video instead.";
   }
-  if (!copied && linkFill >= LINK_WARN_AT) return "This painting is getting close to the size limit for a share link.";
+  if (!copied && nearLinkLimit()) return "This painting is getting close to the size limit for a share link.";
   return copied ? "Link copied! Paste it anywhere to share." : "";
 }
 

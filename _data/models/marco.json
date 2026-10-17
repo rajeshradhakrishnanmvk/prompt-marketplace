@@ -3,7 +3,7 @@
   "name": "MarCO",
   "shape": "net",
   "difficulty": 2,
-  "note": "A paper model of a 6U CubeSat. This is a net, not a fold from one square. The wings stand in for the solar panels.",
+  "note": "A 6U CubeSat net, not a square fold. The wings stand in for the solar panels.",
   "exterior": "painted",
   "credit": "Reference: NASA/JPL-Caltech. This drawing is Foldly's own. NASA and JPL have not endorsed it.",
   "camera": {
@@ -74,11 +74,11 @@
       ],
       [
         0.375,
-        0.1377
+        0.1117
       ],
       [
         0.2893,
-        0.1377
+        0.1117
       ]
     ],
     [
@@ -92,11 +92,11 @@
       ],
       [
         0.2893,
-        0.522
+        0.548
       ],
       [
         0.375,
-        0.522
+        0.548
       ]
     ],
     [
@@ -110,11 +110,11 @@
       ],
       [
         0.625,
-        0.1377
+        0.1117
       ],
       [
         0.7107,
-        0.1377
+        0.1117
       ]
     ],
     [
@@ -128,14 +128,15 @@
       ],
       [
         0.7107,
-        0.522
+        0.548
       ],
       [
         0.625,
-        0.522
+        0.548
       ]
     ]
   ],
+  "print_view": [8.43, 3.8, 83.14, 92.4],
   "flaps": [
     {
       "id": "bottom",

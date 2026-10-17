@@ -5,7 +5,7 @@ order: 5
 shelf: paper
 card_name: MarCO
 picker: MarCO
-studio_note: "A paper model of a 6U CubeSat. This is a net, not a fold from one square. The wings stand in for the solar panels."
+studio_note: "A 6U CubeSat net, not a square fold. The wings stand in for the solar panels."
 seo_title: "MarCO paper model: fold a CubeSat net"
 og_image: /assets/img/og-marco.png
 description: "Paint and fold a paper net of NASA's Mars Cube One CubeSat. The drawing is Foldly's own. NASA and JPL have not endorsed it."
