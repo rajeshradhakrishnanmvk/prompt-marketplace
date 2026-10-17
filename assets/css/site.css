@@ -342,6 +342,24 @@ dialog h2 { font-family: var(--serif); margin: 0 0 8px; }
 .crease-wrap svg { width: 100%; height: auto; background: white; }
 .legend { font-size: 0.9rem; }
 
+.count-optout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0 0 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.count-optout input {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  flex: 0 0 44px;
+  accent-color: var(--indigo);
+}
 .about, .faq { max-width: 44rem; }
 .about h1, .faq h1 { font-family: var(--serif); font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -0.03em; }
 .faq details { background: var(--card); border-radius: 12px; padding: 8px 14px; margin: 8px 0; }
@@ -365,9 +383,12 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
   body.studio main { padding-bottom: 12px; }
   body.studio .paper,
   body.studio .fold-host { width: min(100%, max(260px, calc(100dvh - 530px))); }
+  /* Width, not a max-height: Safari's toolbar grows the viewport by about 80px and would turn a height query back on mid-scroll. */
+  .toolbar,
   body.studio #fold-ui {
-    position: sticky;
-    bottom: 0;
+    position: static;
+  }
+  body.studio #fold-ui {
     z-index: 4;
     background: rgba(255, 250, 243, 0.96);
     padding-top: 6px;
@@ -378,14 +399,6 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
   .fold-bar { order: 3; }
   .toolbar { order: 4; }
   .model-title { font-size: 1.55rem; }
-}
-
-/* Short phones: a sticky bar covers the 260px canvas and the Fold button. */
-@media (max-width: 879px) and (max-height: 700px) {
-  .toolbar,
-  body.studio #fold-ui {
-    position: static;
-  }
 }
 
 @media (min-width: 880px) {

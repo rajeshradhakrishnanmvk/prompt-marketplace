@@ -31,7 +31,8 @@
     "name": {{ page.seo_title | jsonify }},
     "description": {{ page.description | jsonify }},
     "totalTime": {{ page.total_time | jsonify }},
-    "supply": [{ "@type": "HowToSupply", "name": {{ page.materials | jsonify }} }],
+    {% assign supply_name = page.materials | replace: " The printable net prints on page 2.", "" %}
+    "supply": [{ "@type": "HowToSupply", "name": {{ supply_name | jsonify }} }],
     {% assign paper_tool = page.paper_tool | default: "One square of paper" %}
     "tool": [{ "@type": "HowToTool", "name": {{ paper_tool | jsonify }} }],
     "step": [
@@ -61,7 +62,27 @@
   <!-- Foldly visit counter: no cookies, no IP storage. -->
   <script>
   (function () {
-    if (navigator.doNotTrack === '1' || navigator.globalPrivacyControl === true || !navigator.sendBeacon) return;
+    var key = 'foldly-no-count';
+    function optedOut() {
+      try { return localStorage.getItem(key) === '1'; } catch (e) { return false; }
+    }
+    var boxes = document.querySelectorAll('[data-no-count]');
+    for (var i = 0; i < boxes.length; i++) {
+      (function (box) {
+        var on = optedOut();
+        box.checked = on;
+        box.setAttribute('aria-checked', on ? 'true' : 'false');
+        box.addEventListener('change', function () {
+          try {
+            if (box.checked) localStorage.setItem(key, '1');
+            else localStorage.removeItem(key);
+          } catch (e) {}
+          box.setAttribute('aria-checked', box.checked ? 'true' : 'false');
+        });
+      })(boxes[i]);
+    }
+    if (navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.msDoNotTrack === 'yes' || navigator.globalPrivacyControl === true || !navigator.sendBeacon) return;
+    if (optedOut()) return;
     var q = new URLSearchParams(location.search);
     var referrer = '';
     try {
@@ -70,8 +91,7 @@
       referrer = '';
     }
     function cap(value) {
-      value = value || '';
-      return value.length > 100 ? value.slice(0, 100) : value;
+      return Array.from(value || '').slice(0, 100).join('');
     }
     var data = JSON.stringify({
       path: location.pathname,

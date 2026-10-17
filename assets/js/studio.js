@@ -276,6 +276,41 @@ function mountFold(autoplay) {
   playBtn.hidden = reduced;
   nextBtn.hidden = !reduced;
   prevBtn.hidden = !reduced;
+  settleFoldScroll();
+}
+
+/* After Fold, keep the MarCO model fully on a short phone and the scrubber on a taller one.
+   The Fold button would otherwise pull the page and clip the canvas. */
+function settleFoldScroll() {
+  if (models[modelId].shape !== "net") return;
+  if (!window.matchMedia("(max-width: 879px)").matches) return;
+  const root = document.documentElement;
+  const previous = root.style.scrollBehavior;
+  root.style.scrollBehavior = "auto";
+  const place = () => {
+    const btn = document.getElementById("fold-btn");
+    if (btn && document.activeElement === btn) btn.blur();
+    const vh = window.innerHeight;
+    const host = foldHost.getBoundingClientRect();
+    const scrubBox = scrub.getBoundingClientRect();
+    let delta = 0;
+    if (vh <= 700) {
+      if (host.top < 0) delta = host.top;
+      else if (host.bottom > vh) delta = Math.min(host.bottom - vh, Math.max(0, host.top));
+    } else if (scrubBox.bottom > vh - 4) {
+      delta = scrubBox.bottom - (vh - 4);
+      if (host.top - delta < 0) delta = host.top;
+    }
+    if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+  };
+  place();
+  requestAnimationFrame(() => {
+    place();
+    requestAnimationFrame(() => {
+      place();
+      root.style.scrollBehavior = previous;
+    });
+  });
 }
 
 function showPaint() {
