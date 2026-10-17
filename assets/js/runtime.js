@@ -80,7 +80,13 @@ export function sample(prep, time) {
   };
 }
 
-/** World matrix per flap in unit-square space. z is in the same units. */
+/**
+ * Hinge tree for one sheet. The root parent is identity, so a later
+ * multi-sheet kit can place this whole tree with a dock transform
+ * outside the flap math. `shape` defaults to a square; `"net"` is one
+ * printable outline. A kit would be a separate model that points at
+ * several net ids. This function stays the per-sheet step.
+ */
 export function worldMatrices(model, prep, angles, stagePx) {
   const map = {};
   const zUnit = 0.1 / (stagePx || 500);

@@ -1,6 +1,6 @@
 import { createFoldView, blankPaper, reducedMotion } from "./fold-view.js";
 import { createPaint, PALETTE } from "./paint.js";
-import { encodePayload, decodePayload, rasterToken, rasterCanvases } from "./codec.js";
+import { encodePayload, decodePayload, rasterCanvases } from "./codec.js";
 import { renderCard, recordFold } from "./export.js";
 
 const base = document.documentElement.dataset.base || "";
@@ -89,6 +89,12 @@ function showCreases() {
     mid.setAttribute("class", "guide");
     creaseSvg.append(mid);
   }
+  if (model && model.sheet && model.sheet.length >= 3) {
+    const outline = document.createElementNS(ns, "polygon");
+    outline.setAttribute("points", model.sheet.map(([x, y]) => `${x * 100},${y * 100}`).join(" "));
+    outline.setAttribute("class", "net-outline");
+    creaseSvg.append(outline);
+  }
   creaseSvg.classList.toggle("is-off", !paint.tool.creases);
 }
 
@@ -119,6 +125,8 @@ function syncTools() {
   paper.dataset.side = paint.tool.side;
   document.getElementById("undo-btn").disabled = !paint.canUndo();
   document.getElementById("redo-btn").disabled = !paint.canRedo();
+  const drawn = paint.getStrokes().filter((s) => s.tool !== "clear").length;
+  document.getElementById("stroke-warn").hidden = drawn < 20;
   showCreases();
 }
 
@@ -129,6 +137,9 @@ function selectModel(id, { push = true } = {}) {
   titleEl.textContent = (data && data.dataset.name) || models[id].name;
   noteEl.textContent = (data && data.dataset.note) || models[id].note || "";
   noteEl.hidden = !noteEl.textContent;
+  const net = models[id].shape === "net";
+  paper.classList.toggle("is-net", net);
+  paint.setSheet(net ? models[id].sheet : null);
   choices.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.model === id)));
   showCreases();
   syncTools();
@@ -153,23 +164,17 @@ function routeFromLocation() {
   if (id !== modelId) selectModel(id, { push: false });
 }
 
-let shareSimplified = false;
 let shareTooDetailed = false;
 
 async function ensureToken() {
   shareTooDetailed = false;
-  if (raster) {
-    shareSimplified = raster.token[0] === "j" || raster.token[0] === "p";
-    return raster.token;
-  }
+  if (raster) return raster.token;
   const strokes = paint.getStrokes();
-  const packed = await encodePayload(strokes, () => rasterToken(frontCanvas, backCanvas));
+  const packed = await encodePayload(strokes);
   if (packed.tooDetailed || !packed.token) {
     shareTooDetailed = true;
-    shareSimplified = false;
     return null;
   }
-  shareSimplified = Boolean(packed.simplified);
   return packed.token;
 }
 
@@ -177,12 +182,15 @@ function shareMessage(copied) {
   if (shareTooDetailed) {
     return "This painting is too detailed to share as a link. Download a picture or a video instead.";
   }
-  if (shareSimplified) {
-    return copied
-      ? "Link copied. The shared copy is simplified so the link stays short."
-      : "The shared copy is simplified so the link stays short.";
-  }
+  const drawn = paint.getStrokes().filter((s) => s.tool !== "clear").length;
+  if (!copied && drawn >= 20) return "About 20 strokes in. A link holds about 25.";
   return copied ? "Link copied! Paste it anywhere to share." : "";
+}
+
+function syncShareActions() {
+  document.getElementById("copy-link").hidden = shareTooDetailed;
+  if (shareTooDetailed) nativeBtn.hidden = true;
+  else if (navigator.share) nativeBtn.hidden = false;
 }
 
 function mountFold(autoplay) {
@@ -198,7 +206,8 @@ function mountFold(autoplay) {
   const reflect = () => {
     const s = view.getState();
     scrub.value = String(Math.round(s.t * 1000));
-    stepLabel.textContent = s.label || "Flat square";
+    const flatWord = models[modelId].shape === "net" ? "Flat net" : "Flat square";
+    stepLabel.textContent = s.label || flatWord;
     stepCount.textContent = `Step ${Math.min(s.stepCount, s.stepIndex + 1)} of ${s.stepCount}`;
     playBtn.setAttribute("aria-pressed", String(s.playing));
     playBtn.textContent = s.playing ? "Pause" : "Play";
@@ -366,6 +375,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
   shareDialog.showModal();
   try {
     const token = await ensureToken();
+    syncShareActions();
     if (!token) {
       shareUrl.value = "";
       setStatus(shareMessage(false));
@@ -373,7 +383,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
     }
     writeHash(true, token);
     shareUrl.value = location.href;
-    if (shareSimplified) setStatus(shareMessage(false));
+    setStatus(shareMessage(false));
   } catch (err) {
     shareUrl.value = location.href;
     setStatus("Couldn't copy the link. Try again, or copy it from the box below.");
@@ -383,6 +393,7 @@ document.getElementById("share-btn").addEventListener("click", async () => {
 document.getElementById("copy-link").addEventListener("click", async () => {
   try {
     const token = await ensureToken();
+    syncShareActions();
     if (!token) {
       shareUrl.value = "";
       setStatus(shareMessage(false));
@@ -448,6 +459,7 @@ if (navigator.share) nativeBtn.hidden = false;
 nativeBtn.addEventListener("click", async () => {
   try {
     const token = await ensureToken();
+    syncShareActions();
     if (!token) {
       shareUrl.value = "";
       setStatus(shareMessage(false));
@@ -455,7 +467,7 @@ nativeBtn.addEventListener("click", async () => {
     }
     writeHash(true, token);
     shareUrl.value = location.href;
-    if (shareSimplified) setStatus(shareMessage(false));
+    setStatus(shareMessage(false));
     await navigator.share({ title: `Foldly — ${models[modelId].name}`, text: "Paint a square. Watch it fold.", url: shareUrl.value });
   } catch (err) {
     if (err && err.name === "AbortError") return;

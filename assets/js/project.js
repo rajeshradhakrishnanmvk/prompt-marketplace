@@ -114,6 +114,36 @@ function movePoint(p, fit) {
  * Scale that keeps every pose in the timeline inside the frame.
  * baseCamera.ry is the resting yaw; each step's flip is added on top.
  */
+function fitBox(minX, minY, maxX, maxY, size, margin) {
+  if (!Number.isFinite(minX)) return { scale: 1, dx: 0, dy: 0 };
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const pad = size * margin;
+  const inner = Math.max(1, size - pad * 2);
+  const scale = Math.min(inner / bw, inner / bh);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  return { scale, dx: size / 2 - cx * scale, dy: size / 2 - cy * scale };
+}
+
+/** Fit one pose. Used by nets, whose flat sheet is much larger than the folded body. */
+export function poseFit(model, prep, angles, camera, size, margin = 0.08) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const tris = projectFlaps(model, prep, angles, camera, size);
+  for (const tri of tris) {
+    for (const p of [tri.p0, tri.p1, tri.p2]) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+  }
+  return fitBox(minX, minY, maxX, maxY, size, margin);
+}
+
 export function frameFit(model, prep, baseCamera, size, margin = 0.06) {
   let minX = Infinity;
   let minY = Infinity;

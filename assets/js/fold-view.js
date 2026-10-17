@@ -1,4 +1,4 @@
-import { frameFit, paintProjection, projectPolygons } from "./project.js";
+import { frameFit, paintProjection, poseFit, projectPolygons } from "./project.js";
 import { prepare, sample } from "./runtime.js";
 
 /**
@@ -97,7 +97,9 @@ export function createFoldView(host, model, options = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
     const camera = cameraFor(sampled);
-    const placed = fitFor(size);
+    const placed = model.shape === "net"
+      ? poseFit(model, prep, sampled.angles, camera, size, 0.08)
+      : fitFor(size);
     if (debug) {
       const polys = projectPolygons(model, prep, sampled.angles, camera, size);
       polys.forEach((poly, index) => {

@@ -180,6 +180,7 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
 .model-card h2 a { display: inline-flex; align-items: center; min-height: 24px; }
 .model-card p { margin: 0; line-height: 1.4; }
 .model-card .meta { color: #5c5348; font-size: 0.92rem; }
+.credit { color: #5c5348; max-width: 62ch; }
 .card-links { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
 .icon { width: 100%; height: 92px; }
 
@@ -187,7 +188,9 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
   max-width: 1200px;
 }
 .studio-app { display: flex; flex-direction: column; gap: 12px; }
-.model-picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.section-note { margin: 0 0 16px; max-width: 62ch; color: #5c5348; }
+.model-picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; }
+.picker-label { font-weight: 700; white-space: nowrap; padding: 0 4px; }
 .model-choice {
   min-height: var(--hit);
   border-radius: 999px;
@@ -213,6 +216,7 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
   border-radius: 4px;
 }
 .paper[data-side="back"] { background: #f6e2b0; }
+.paper.is-net, .paper.is-net[data-side="back"] { background: transparent; box-shadow: none; }
 .paper canvas, .creases {
   position: absolute;
   inset: 0;
@@ -238,6 +242,7 @@ input[type="color"] {
 .creases .valley { stroke: rgba(159, 42, 28, 0.55); stroke-dasharray: 2.2 1.3; }
 .creases .mountain { stroke: rgba(36, 48, 86, 0.55); stroke-dasharray: 0.4 1.3; }
 .creases .guide { stroke: rgba(28, 25, 21, 0.35); stroke-dasharray: 0; stroke-width: 0.4; }
+.creases .net-outline { stroke: rgba(28, 25, 21, 0.8); stroke-width: 0.9; fill: none; }
 .creases.is-off { display: none; }
 
 .toolbar {

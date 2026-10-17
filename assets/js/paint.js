@@ -112,6 +112,30 @@ export function createPaint(frontCanvas, backCanvas) {
   };
   let snapshot = null;
   let current = null;
+  let sheet = null;
+
+  function traceSheet(g) {
+    g.beginPath();
+    sheet.forEach(([x, y], i) => {
+      const px = x * 1024;
+      const py = y * 1024;
+      if (i) g.lineTo(px, py);
+      else g.moveTo(px, py);
+    });
+    g.closePath();
+  }
+
+  function clipped(g, fn) {
+    if (!sheet || sheet.length < 3) {
+      fn();
+      return;
+    }
+    g.save();
+    traceSheet(g);
+    g.clip();
+    fn();
+    g.restore();
+  }
 
   function paperHex(side) {
     return PAPER[side];
@@ -124,11 +148,34 @@ export function createPaint(frontCanvas, backCanvas) {
   }
 
   function fillPaper(side) {
-    ctx[side].fillStyle = paperHex(side);
-    ctx[side].fillRect(0, 0, 1024, 1024);
+    const g = ctx[side];
+    if (!sheet) {
+      g.fillStyle = paperHex(side);
+      g.fillRect(0, 0, 1024, 1024);
+      return;
+    }
+    g.clearRect(0, 0, 1024, 1024);
+    clipped(g, () => {
+      g.fillStyle = paperHex(side);
+      g.fillRect(0, 0, 1024, 1024);
+    });
+  }
+
+  function maskSheet(sideCtx) {
+    sideCtx.save();
+    sideCtx.globalCompositeOperation = "destination-in";
+    traceSheet(sideCtx);
+    sideCtx.fillStyle = "#000";
+    sideCtx.fill();
+    sideCtx.restore();
   }
 
   function drawStroke(sideCtx, stroke) {
+    clipped(sideCtx, () => drawStrokeBody(sideCtx, stroke));
+    if (sheet && stroke.tool === "fill") maskSheet(sideCtx);
+  }
+
+  function drawStrokeBody(sideCtx, stroke) {
     const color = resolve(stroke);
     if (stroke.tool === "clear") return;
     if (stroke.tool === "fill") {
@@ -264,6 +311,10 @@ export function createPaint(frontCanvas, backCanvas) {
       await drawUrl(ctx.back, backUrl);
     },
     replay,
+    setSheet(next) {
+      sheet = next && next.length >= 3 ? next : null;
+      replay();
+    },
   };
 }
 

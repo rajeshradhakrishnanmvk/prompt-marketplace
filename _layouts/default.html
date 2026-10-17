@@ -31,7 +31,8 @@
     "description": {{ page.description | jsonify }},
     "totalTime": {{ page.total_time | jsonify }},
     "supply": [{ "@type": "HowToSupply", "name": {{ page.materials | jsonify }} }],
-    "tool": [{ "@type": "HowToTool", "name": "One square of paper" }],
+    {% assign paper_tool = page.paper_tool | default: "One square of paper" %}
+    "tool": [{ "@type": "HowToTool", "name": {{ paper_tool | jsonify }} }],
     "step": [
       {% for step in page.steps %}
       {% if step.tip %}{% capture howto_text %}{{ step.text }} {{ step.tip }}{% endcapture %}{% else %}{% assign howto_text = step.text %}{% endif %}

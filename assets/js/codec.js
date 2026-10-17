@@ -2,7 +2,8 @@
  * Share payload.
  * Stroke coordinates are stored exactly on the 0–1023 grid (10 bits), with
  * small deltas packed tighter. Deflate-raw via CompressionStream, then base64url.
- * Prefix: z = deflate-raw, r = raw bytes, j = JPEG fallback, p = legacy PNG.
+ * Prefix: z = deflate-raw, r = raw bytes.
+ * j and p are older picture links. They still open, and new links are not pictures.
  */
 
 const TOOLS = ["brush", "eraser", "fill", "clear"];
@@ -230,7 +231,7 @@ async function inflateRaw(bytes) {
   return new Uint8Array(buf);
 }
 
-export async function encodePayload(strokes, rasterFallback) {
+export async function encodePayload(strokes) {
   const raw = serialize(strokes);
   let token = `r${b64url(raw)}`;
   if (typeof CompressionStream === "function") {
@@ -240,12 +241,8 @@ export async function encodePayload(strokes, rasterFallback) {
       token = `r${b64url(raw)}`;
     }
   }
-  if (token.length > 1800 && typeof rasterFallback === "function") {
-    const raster = await rasterFallback();
-    if (raster && raster.length <= 1800) return { token: raster, simplified: true };
-    return { token: null, simplified: false, tooDetailed: true };
-  }
-  return { token, simplified: false, tooDetailed: false };
+  if (token.length > 1800) return { token: null, tooDetailed: true };
+  return { token, tooDetailed: false };
 }
 
 export async function decodePayload(token) {
@@ -254,29 +251,6 @@ export async function decodePayload(token) {
   const bytes = unb64url(token.slice(1));
   const raw = token[0] === "z" ? await inflateRaw(bytes) : bytes;
   return { type: "strokes", strokes: deserialize(raw) };
-}
-
-/**
- * Raster fallback when the stroke token is longer than about 1,800 characters.
- * One JPEG holds the front square over the back square.
- * 640px at quality 0.92 is the floor: a dense 40-stroke painting stays at
- * about 25.4 dB there. Smaller or softer JPEGs smear, so they are not tried.
- * Returns null when that floor does not fit in the character budget.
- */
-export function rasterToken(frontCanvas, backCanvas) {
-  const size = 640;
-  const quality = 0.92;
-  const c = document.createElement("canvas");
-  c.width = size;
-  c.height = size * 2;
-  const g = c.getContext("2d");
-  g.fillStyle = "#fffdf8";
-  g.fillRect(0, 0, size, size * 2);
-  g.drawImage(frontCanvas, 0, 0, size, size);
-  g.drawImage(backCanvas, 0, size, size, size);
-  const url = c.toDataURL("image/jpeg", quality);
-  const token = `j${url.slice(url.indexOf(",") + 1).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
-  return token.length <= 1800 ? token : null;
 }
 
 export function rasterCanvases(token) {

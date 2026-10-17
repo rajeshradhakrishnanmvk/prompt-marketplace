@@ -57,7 +57,12 @@ body_class: studio
 
   <div class="model-picker" role="group" aria-label="Choose a model">
     {% assign models = site.models | sort: "order" %}
+    {% assign shelf = "" %}
     {% for m in models %}
+    {% if m.shelf == "paper" and shelf != "paper" %}
+    <span class="picker-label">Paper models</span>
+    {% assign shelf = "paper" %}
+    {% endif %}
     <button type="button" class="model-choice" data-model="{{ m.model_id }}" data-name="{{ m.card_name }}" data-note="{{ m.studio_note }}" aria-pressed="false">{{ m.picker }}</button>
     {% endfor %}
   </div>
@@ -69,6 +74,7 @@ body_class: studio
     </div>
     <h1 class="model-title" id="model-title">Paper Cup</h1>
     <p class="note" id="model-note" hidden></p>
+    <p class="hint" id="stroke-warn" hidden>About 20 strokes in. A link holds about 25.</p>
     <div class="paper" id="paper" data-side="front">
       <canvas id="front-canvas" class="is-active" width="1024" height="1024" tabindex="0" aria-label="Front of the paper. Paint here."></canvas>
       <canvas id="back-canvas" width="1024" height="1024" tabindex="0" aria-label="Back of the paper. Paint here."></canvas>
