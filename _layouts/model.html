@@ -26,7 +26,24 @@ layout: default
     {% for fact in page.facts %}
     <div>
       <dt>{{ fact.label }}</dt>
-      <dd>{{ fact.text }}</dd>
+      <dd>
+        {% if fact.lightday %}
+        <span data-lightday>
+          <span data-static>{{ fact.text }}</span>
+          <span data-before hidden>{{ fact.before }}</span>
+          <span data-after hidden>{{ fact.after }}</span>
+        </span>
+        {% else %}
+        {{ fact.text }}
+        {% endif %}
+        {% if fact.links %}
+        <ul class="fact-links">
+          {% for link in fact.links %}
+          <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </dd>
     </div>
     {% endfor %}
   </dl>

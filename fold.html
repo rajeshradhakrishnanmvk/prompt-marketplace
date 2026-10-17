@@ -51,6 +51,7 @@ body_class: studio
       <button type="button" class="tool-btn" id="redo-btn">Redo</button>
       <button type="button" class="tool-btn" id="clear-btn">Clear</button>
       <button type="button" class="tool-btn" id="surprise-btn">Surprise me</button>
+      <button type="button" class="tool-btn" id="paint-all-btn" hidden>Paint all</button>
     </div>
     <p class="hint">Shortcuts: B brush, F fill, E eraser, Ctrl+Z undo.</p>
   </div>
@@ -74,6 +75,8 @@ body_class: studio
     </div>
     <h1 class="model-title" id="model-title">Paper Cup</h1>
     <p class="note" id="model-note" hidden></p>
+    <p class="credit" id="model-credit" hidden></p>
+    <div id="sheet-tabs" class="sheet-tabs" role="group" aria-label="Sheets" hidden></div>
     <p class="hint" id="stroke-warn" hidden>This painting is getting close to the size limit for a share link.</p>
     <div class="paper" id="paper" data-side="front">
       <canvas id="front-canvas" class="is-active" width="1024" height="1024" tabindex="0" aria-label="Front of the paper. Paint here."></canvas>

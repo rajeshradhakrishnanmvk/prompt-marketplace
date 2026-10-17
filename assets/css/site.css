@@ -182,6 +182,38 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
 .model-card p { margin: 0; line-height: 1.4; }
 .model-card .meta { color: #5c5348; font-size: 0.92rem; }
 .credit { color: #5c5348; max-width: 62ch; }
+.fact-links { margin: 6px 0 0; padding-left: 1.2em; overflow-wrap: anywhere; }
+.fact-links a { overflow-wrap: anywhere; }
+.sheet-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  align-items: stretch;
+  padding-bottom: 4px;
+}
+.sheet-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+  min-width: 76px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 12px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sheet-tab canvas { width: 48px; height: 48px; background: #fffdf8; border-radius: 4px; }
+.sheet-tab[aria-pressed="true"] { outline: 2px solid var(--ink); }
+.kit { max-width: 860px; }
+.kit-net { display: block; max-width: 100%; height: auto; background: #fff; }
+.kit-sheet h2 { font-family: var(--serif); }
 .card-links { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
 .icon { width: 100%; height: 92px; }
 
@@ -204,7 +236,7 @@ main { padding: 28px 20px 64px; max-width: 1120px; margin: 0 auto; }
 .model-choice[aria-pressed="true"] { background: var(--indigo); color: #f6efe2; border-color: var(--indigo); }
 .model-title { font-family: var(--serif); font-size: 2rem; margin: 0; }
 .note { margin: 0; color: #5c5348; }
-.paper-wrap { display: grid; justify-items: center; }
+.paper-wrap { display: grid; justify-items: center; min-width: 0; }
 .paper, .fold-host {
   position: relative;
   width: min(100%, 640px);
@@ -426,6 +458,7 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
 }
 
 @media (min-width: 880px) {
+  body.studio { overflow-anchor: none; }
   .hero { grid-template-columns: 1.1fr 0.9fr; }
   body.studio main { padding-top: 10px; padding-bottom: 12px; }
   body.studio .model-title { font-size: 1.55rem; line-height: 1.1; }
@@ -500,5 +533,9 @@ textarea.dump { width: 100%; min-height: 120px; font-family: ui-monospace, monos
   .crease-wrap svg { border: 0.4mm solid black; }
   .crease-wrap.is-net svg { border: 0; }
   .legend { font-size: 10pt; margin: 2pt 0 0; text-align: center; }
+  .kit-sheet { break-before: page; page-break-before: always; }
+  .kit-sheet:first-of-type { break-before: auto; page-break-before: auto; }
+  .kit-net { width: auto; max-width: 170mm; height: auto; }
+  .fact-links { font-size: 9pt; }
   @page { size: A4; margin: 8mm; }
 }

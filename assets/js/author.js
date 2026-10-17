@@ -1,6 +1,6 @@
 import { createFoldView, blankPaper } from "./fold-view.js";
-import { prepare, sample } from "./runtime.js";
 import { paintProjection } from "./project.js";
+import { prepareModel, sampleModel } from "./scene.js";
 
 const models = JSON.parse(document.getElementById("foldly-models").textContent);
 const select = document.getElementById("author-model");
@@ -18,8 +18,12 @@ function boot(id) {
   view.setTextures(blankPaper("front"), blankPaper("back"));
   view.setDebug(document.getElementById("debug").checked);
   sliders.replaceChildren();
+  if (model.type === "assembly") {
+    paintOverlay();
+    return;
+  }
   const zeros = {};
-  model.flaps.forEach((flap, i) => {
+  (model.flaps || []).forEach((flap, i) => {
     zeros[flap.id] = 0;
     if (!flap.poly || flap.poly.length < 3) return;
     const label = document.createElement("label");
@@ -70,7 +74,8 @@ function paintOverlay() {
   const ctx = overlay.getContext("2d");
   ctx.clearRect(0, 0, overlay.width, overlay.height);
   const state = view.getState();
-  paintProjection(ctx, model, prepare(model), readAngles(), state.camera, blankPaper("front"), blankPaper("back"), overlay.width);
+  const angles = model.type === "assembly" ? state.angles : readAngles();
+  paintProjection(ctx, model, prepareModel(model), angles, state.camera, blankPaper("front"), blankPaper("back"), overlay.width);
 }
 
 document.getElementById("play").addEventListener("click", () => view.play());
@@ -85,9 +90,14 @@ select.addEventListener("change", () => boot(select.value));
 document.getElementById("steps").addEventListener("click", (e) => {
   const btn = e.target.closest("[data-end]");
   if (!btn || !view) return;
-  const prep = prepare(model);
+  const prep = prepareModel(model);
   const time = Number(btn.dataset.end);
-  const sampled = sample(prep, time);
+  if (model.type === "assembly") {
+    view.setTime(time / prep.duration);
+    paintOverlay();
+    return;
+  }
+  const sampled = sampleModel(prep, time);
   sliders.querySelectorAll("input").forEach((el) => {
     const value = Math.round(sampled.angles[el.dataset.flap] || 0);
     el.value = String(value);
@@ -107,14 +117,13 @@ const stepBox = document.getElementById("steps");
 select.addEventListener("change", () => {
   stepBox.replaceChildren();
   const m = models[select.value];
-  let acc = 0;
-  m.steps.forEach((s, i) => {
-    acc += s.dur;
+  const prep = prepareModel(m);
+  prep.steps.forEach((s, i) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "btn";
-    b.dataset.end = String(acc - 0.001);
-    b.textContent = `${i + 1}. ${s.label.slice(0, 42)}`;
+    b.dataset.end = String(s.end - 0.001);
+    b.textContent = `${i + 1}. ${(s.label || "").slice(0, 42)}`;
     stepBox.append(b);
   });
 });

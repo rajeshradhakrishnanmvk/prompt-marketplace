@@ -1,11 +1,11 @@
-import { prepare, sample } from "./runtime.js";
 import { projectPolygons } from "./project.js";
+import { prepareModel, sampleModel } from "./scene.js";
 
 export function drawStepDiagram(svg, model, stepIndex) {
-  const prep = prepare(model);
+  const prep = prepareModel(model);
   const step = prep.steps[stepIndex];
   if (!step) return;
-  const sampled = sample(prep, Math.max(0, step.end - 0.0001));
+  const sampled = sampleModel(prep, Math.max(0, step.end - 0.0001));
   const camera = {
     rx: (model.camera && model.camera.rx) || -56,
     ry: (model.camera && model.camera.ry) || -28,
@@ -14,7 +14,7 @@ export function drawStepDiagram(svg, model, stepIndex) {
     perspective: (model.camera && model.camera.perspective) || 980,
   };
   const polys = projectPolygons(model, prep, sampled.angles, camera, 100);
-  if (model.shape === "net") fitDiagram(polys);
+  if (model.shape === "net" || model.type === "assembly") fitDiagram(polys);
   const moving = new Set((step.moves || []).map((m) => m.flap));
   const ns = "http://www.w3.org/2000/svg";
   svg.setAttribute("viewBox", "-28 -28 156 156");

@@ -248,11 +248,80 @@ export async function encodePayload(strokes) {
   return { token, tooDetailed: false, length };
 }
 
+function u16(bytes, offset) {
+  return bytes[offset] * 256 + bytes[offset + 1];
+}
+
+export function serializeAssembly(entries) {
+  const chunks = [Uint8Array.of(3, entries.length)];
+  for (const [id, strokes] of entries) {
+    const idBytes = new TextEncoder().encode(id);
+    const body = serialize(strokes);
+    if (body.length > 65535) {
+      const err = new Error("sheet-too-long");
+      throw err;
+    }
+    const head = new Uint8Array(1 + idBytes.length + 2);
+    head[0] = idBytes.length;
+    head.set(idBytes, 1);
+    head[1 + idBytes.length] = (body.length >> 8) & 255;
+    head[2 + idBytes.length] = body.length & 255;
+    chunks.push(head, body);
+  }
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
+}
+
+export function deserializeAssembly(bytes) {
+  if (!bytes || bytes[0] !== 3) return {};
+  const count = bytes[1];
+  const sheets = {};
+  let offset = 2;
+  const decode = new TextDecoder();
+  for (let i = 0; i < count; i += 1) {
+    const idLen = bytes[offset];
+    const id = decode.decode(bytes.subarray(offset + 1, offset + 1 + idLen));
+    const bodyLen = u16(bytes, offset + 1 + idLen);
+    const start = offset + 1 + idLen + 2;
+    sheets[id] = deserialize(bytes.subarray(start, start + bodyLen));
+    offset = start + bodyLen;
+  }
+  return sheets;
+}
+
+export async function encodeAssemblyPayload(entries) {
+  let raw;
+  try {
+    raw = serializeAssembly(entries);
+  } catch (err) {
+    if (err && err.message === "sheet-too-long") return { token: null, tooDetailed: true, length: SHARE_LIMIT + 1 };
+    throw err;
+  }
+  let token = `r${b64url(raw)}`;
+  if (typeof CompressionStream === "function") {
+    try {
+      token = `z${b64url(await deflateRaw(raw))}`;
+    } catch (err) {
+      token = `r${b64url(raw)}`;
+    }
+  }
+  const length = token.length;
+  if (length > SHARE_LIMIT) return { token: null, tooDetailed: true, length };
+  return { token, tooDetailed: false, length };
+}
+
 export async function decodePayload(token) {
   if (!token) return { type: "empty", strokes: [] };
   if (token[0] === "p" || token[0] === "j") return { type: "raster", token };
   const bytes = unb64url(token.slice(1));
   const raw = token[0] === "z" ? await inflateRaw(bytes) : bytes;
+  if (raw[0] === 3) return { type: "assembly", sheets: deserializeAssembly(raw) };
   return { type: "strokes", strokes: deserialize(raw) };
 }
 

@@ -45,3 +45,19 @@ next.addEventListener("click", () => {
 document.querySelectorAll(".step-diagram").forEach((svg) => {
   drawStepDiagram(svg, model, Number(svg.dataset.step));
 });
+
+function syncLightDay() {
+  const passed = Date.now() >= Date.parse("2026-11-18T10:16:07Z");
+  document.querySelectorAll("[data-lightday]").forEach((lightDay) => {
+    const steady = lightDay.querySelector("[data-static]");
+    const before = lightDay.querySelector("[data-before]");
+    const after = lightDay.querySelector("[data-after]");
+    if (steady) steady.hidden = true;
+    if (before) before.hidden = passed;
+    if (after) after.hidden = !passed;
+  });
+}
+syncLightDay();
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") syncLightDay();
+});
